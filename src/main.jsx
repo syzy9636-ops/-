@@ -35,6 +35,12 @@ const entryImageUrl = (entry) => {
   return `${assetBase}assets/knowledge/${entry.categoryId}-${entry.number}.${extension}`
 }
 
+const entryPreviewUrl = (entry) => {
+  const extension = entryAssetExtensions[entry.categoryId]?.[Number(entry.number) - 1] || 'webp'
+  const base = `${assetBase}assets/knowledge/${entry.categoryId}-${entry.number}`
+  return extension === 'gif' ? `${assetBase}assets/knowledge/posters/${entry.categoryId}-${entry.number}.jpg` : `${base}.${extension}`
+}
+
 const categoryIcons = {
   bcc: Aperture,
   psoft: CircleDot,
@@ -45,14 +51,162 @@ const categoryIcons = {
 }
 
 function AmbientField() {
+  const fieldRef = useRef(null)
+
+  useEffect(() => {
+    const field = fieldRef.current
+    if (!field || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+
+    let frame = 0
+    let targetX = 0
+    let targetY = 0
+    const update = () => {
+      frame = 0
+      field.style.setProperty('--mx', `${targetX}px`)
+      field.style.setProperty('--my', `${targetY}px`)
+    }
+    const move = (event) => {
+      if (event.pointerType === 'touch') return
+      targetX = (event.clientX / window.innerWidth - 0.5) * 120
+      targetY = (event.clientY / window.innerHeight - 0.5) * 90
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+    const reset = () => {
+      targetX = 0
+      targetY = 0
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+
+    window.addEventListener('pointermove', move, { passive: true })
+    window.addEventListener('pointerleave', reset, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerleave', reset)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
+
   return (
-    <div className="ambient-field" aria-hidden="true">
+    <div className="ambient-field" ref={fieldRef} aria-hidden="true">
       <div className="ambient-lines">
         {Array.from({ length: 18 }, (_, index) => <span style={{ '--line': index }} key={index} />)}
       </div>
       <div className="ambient-dots">
         {Array.from({ length: 54 }, (_, index) => <i style={{ '--dot': index }} key={index} />)}
       </div>
+    </div>
+  )
+}
+
+function WarpText({ text }) {
+  const textRef = useRef(null)
+  const turbulenceRef = useRef(null)
+  const displacementRef = useRef(null)
+
+  useEffect(() => {
+    const node = textRef.current
+    if (!node || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+
+    let frame = 0
+    let pointerActive = false
+    let targetX = 0
+    let targetY = 0
+    let currentX = 0
+    let currentY = 0
+    let lastFilterTick = -1
+    const update = (time) => {
+      const orbitX = pointerActive ? targetX : Math.sin(time / 2600) * 1.4
+      const orbitY = pointerActive ? targetY : Math.cos(time / 3100) * 1.1
+      currentX += (orbitX - currentX) * 0.14
+      currentY += (orbitY - currentY) * 0.14
+      node.style.setProperty('--warp-rotate-y', `${currentX * 0.34}deg`)
+      node.style.setProperty('--warp-rotate-x', `${-currentY * 0.2}deg`)
+      node.style.setProperty('--warp-shift-x', `${currentX * 0.55}px`)
+      node.style.setProperty('--warp-shift-y', `${currentY * 0.4}px`)
+      node.style.setProperty('--ripple-x', `${50 + currentX * 4}%`)
+      node.style.setProperty('--ripple-y', `${50 + currentY * 4}%`)
+
+      const filterTick = Math.floor(time / 33)
+      if (filterTick !== lastFilterTick) {
+        lastFilterTick = filterTick
+        const intensity = Math.min(1, (Math.abs(currentX) + Math.abs(currentY)) / 12)
+        turbulenceRef.current?.setAttribute('baseFrequency', `${0.006 + intensity * 0.004} ${0.011 + intensity * 0.006}`)
+        displacementRef.current?.setAttribute('scale', `${5 + intensity * 10}`)
+      }
+      frame = window.requestAnimationFrame(update)
+    }
+    const move = (event) => {
+      if (event.pointerType === 'touch') return
+      const rect = node.getBoundingClientRect()
+      targetX = ((event.clientX - rect.left) / rect.width - 0.5) * 9
+      targetY = ((event.clientY - rect.top) / rect.height - 0.5) * 7
+      pointerActive = true
+    }
+    const leave = () => {
+      pointerActive = false
+      targetX = 0
+      targetY = 0
+    }
+
+    node.addEventListener('pointermove', move, { passive: true })
+    node.addEventListener('pointerleave', leave, { passive: true })
+    frame = window.requestAnimationFrame(update)
+    return () => {
+      node.removeEventListener('pointermove', move)
+      node.removeEventListener('pointerleave', leave)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  return (
+    <span className="warp-text" ref={textRef} aria-label={text}>
+      <svg className="warp-text-filter" aria-hidden="true" focusable="false">
+        <defs>
+          <filter id="warp-text-filter-definition" x="-8%" y="-18%" width="116%" height="136%">
+            <feTurbulence ref={turbulenceRef} type="fractalNoise" baseFrequency="0.006 0.011" numOctaves="2" seed="17" result="warp-noise" />
+            <feDisplacementMap ref={displacementRef} in="SourceGraphic" in2="warp-noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
+      <span className="warp-text-glow" aria-hidden="true">{text}</span>
+      <span className="warp-text-face" aria-hidden="true">{text}</span>
+      <span className="warp-text-ripple" aria-hidden="true">{text}</span>
+    </span>
+  )
+}
+
+function ScrollBlur() {
+  const blurRef = useRef(null)
+
+  useEffect(() => {
+    const blur = blurRef.current
+    if (!blur || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+
+    let frame = 0
+    let timeout = 0
+    const update = () => {
+      frame = 0
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+      const progress = maxScroll > 0 ? window.scrollY / maxScroll : 0
+      blur.style.setProperty('--scroll-progress', progress.toFixed(3))
+      blur.classList.add('is-active')
+      window.clearTimeout(timeout)
+      timeout = window.setTimeout(() => blur.classList.remove('is-active'), 280)
+    }
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (frame) window.cancelAnimationFrame(frame)
+      window.clearTimeout(timeout)
+    }
+  }, [])
+
+  return (
+    <div className="scroll-blur" ref={blurRef} aria-hidden="true">
+      {Array.from({ length: 5 }, (_, index) => <span style={{ '--blur-index': index }} key={index} />)}
     </div>
   )
 }
@@ -94,7 +248,7 @@ function Sidebar({ activeCategory, onCategoryChange, open, onClose }) {
   )
 }
 
-function DetailDrawer({ entry, onClose }) {
+function DetailDrawer({ entry, onClose, onImageOpen }) {
   useEffect(() => {
     if (!entry) return undefined
     const closeOnEscape = (event) => {
@@ -119,9 +273,12 @@ function DetailDrawer({ entry, onClose }) {
               <button type="button" onClick={onClose} aria-label="关闭详情"><X size={20} /></button>
             </header>
             <div className="detail-index"><span>{entry.number}</span><i /></div>
-            <figure className="detail-media">
-              <img src={entryImageUrl(entry)} alt={`${entry.title} 案例图`} loading="lazy" decoding="async" />
-            </figure>
+            <button className="detail-media-trigger" type="button" onClick={() => onImageOpen(entryImageUrl(entry), `${entry.title} 案例图`)} aria-label="放大案例图">
+              <figure className="detail-media">
+                <img src={entryImageUrl(entry)} alt={`${entry.title} 案例图`} loading="lazy" decoding="async" />
+                <span className="detail-media-hint">点击查看大图</span>
+              </figure>
+            </button>
             <div className="detail-copy">
               <span className={`detail-category tone-text-${entry.tone}`}>{entry.category}</span>
               <h2>{entry.title}</h2>
@@ -140,10 +297,36 @@ function DetailDrawer({ entry, onClose }) {
   )
 }
 
+function ImageLightbox({ image, alt, onClose }) {
+  useEffect(() => {
+    if (!image) return undefined
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    document.body.classList.add('lightbox-open')
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape)
+      document.body.classList.remove('lightbox-open')
+    }
+  }, [image, onClose])
+
+  return (
+    <div className={`lightbox-layer ${image ? 'is-open' : ''}`} aria-hidden={!image}>
+      <button className="lightbox-backdrop" type="button" aria-label="关闭大图" onClick={onClose} tabIndex={image ? 0 : -1} />
+      <div className="lightbox-content" role="dialog" aria-modal="true" aria-label={alt || '案例大图'}>
+        {image && <img src={image} alt={alt || ''} decoding="async" />}
+        <button className="lightbox-close" type="button" onClick={onClose} aria-label="关闭大图"><X size={22} /></button>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [query, setQuery] = useState('')
   const [selectedEntry, setSelectedEntry] = useState(null)
+  const [lightbox, setLightbox] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const deferredQuery = useDeferredValue(query)
   const appRef = useRef(null)
@@ -173,7 +356,7 @@ function App() {
       timeline
         .fromTo('.utility-bar', { y: -30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.75 }, 0.18)
         .fromTo('.hero-eyebrow', { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6 }, 0.34)
-        .fromTo('.knowledge-title > span, .knowledge-title > em', { yPercent: 120, rotateX: -72, autoAlpha: 0 }, { yPercent: 0, rotateX: 0, autoAlpha: 1, duration: 1.05, stagger: 0.08 }, 0.42)
+        .fromTo('.knowledge-title', { yPercent: 120, rotateX: -72, autoAlpha: 0 }, { yPercent: 0, rotateX: 0, autoAlpha: 1, duration: 1.05 }, 0.42)
         .fromTo('.hero-summary, .search-shell, .hero-stat', { y: 38, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.08 }, 0.72)
         .fromTo('.hero-art', { clipPath: 'inset(0 0 100% 0)', scale: 1.08, autoAlpha: 0 }, { clipPath: 'inset(0 0 0% 0)', scale: 1, autoAlpha: 1, duration: 1.2 }, 0.55)
     }, appRef)
@@ -211,6 +394,7 @@ function App() {
   return (
     <div className="knowledge-app" ref={appRef}>
       <AmbientField />
+      <ScrollBlur />
       <Sidebar activeCategory={activeCategory} onCategoryChange={setActiveCategory} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="app-main">
@@ -223,7 +407,7 @@ function App() {
         <section className="knowledge-hero">
           <div className="hero-copy">
             <span className="hero-eyebrow">AE PLUGINS / SCRIPTS / WORKFLOW</span>
-            <h1 className="knowledge-title"><span>视效</span><em>知识库</em></h1>
+            <h1 className="knowledge-title"><WarpText text="视效知识库" /></h1>
             <p className="hero-summary">围绕 After Effects 插件、脚本与画面处理方法整理的个人制作索引。</p>
             <label className="search-shell">
               <Search size={20} />
@@ -260,7 +444,7 @@ function App() {
               {filteredEntries.map((entry) => (
                 <button className={`entry-card tone-${entry.tone}`} type="button" onClick={() => setSelectedEntry(entry)} key={entry.id}>
                   <span className="entry-number">{entry.number}</span>
-                  <span className="entry-media"><img src={entryImageUrl(entry)} alt="" loading="lazy" decoding="async" /></span>
+                  <span className="entry-media"><img src={entryPreviewUrl(entry)} alt="" loading="lazy" decoding="async" fetchPriority="low" /></span>
                   <span className="entry-category">{entry.category}</span>
                   <h3>{entry.title}</h3>
                   <p>{entry.note}</p>
@@ -280,7 +464,8 @@ function App() {
         </footer>
       </main>
 
-      <DetailDrawer entry={selectedEntry} onClose={() => setSelectedEntry(null)} />
+      <DetailDrawer entry={selectedEntry} onClose={() => setSelectedEntry(null)} onImageOpen={(image, alt) => setLightbox({ image, alt })} />
+      <ImageLightbox image={lightbox?.image} alt={lightbox?.alt} onClose={() => setLightbox(null)} />
     </div>
   )
 }
