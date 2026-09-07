@@ -16,7 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import gsap from 'gsap'
-import { allEntries, categories, notionHome } from './data'
+import { allEntries, blenderHome, categories, notionHome, platforms } from './data'
 import './styles.css'
 
 const assetBase = import.meta.env.BASE_URL
@@ -31,15 +31,21 @@ const entryAssetExtensions = {
 }
 
 const entryImageUrl = (entry) => {
+  if (entry.images?.length) return `${assetBase}assets/${entry.images[0]}`
   const extension = entryAssetExtensions[entry.categoryId]?.[Number(entry.number) - 1] || 'webp'
   return `${assetBase}assets/knowledge/${entry.categoryId}-${entry.number}.${extension}`
 }
 
 const entryPreviewUrl = (entry) => {
+  if (entry.images?.length) return `${assetBase}assets/${entry.images[0]}`
   const extension = entryAssetExtensions[entry.categoryId]?.[Number(entry.number) - 1] || 'webp'
   const base = `${assetBase}assets/knowledge/${entry.categoryId}-${entry.number}`
   return extension === 'gif' ? `${assetBase}assets/knowledge/posters/${entry.categoryId}-${entry.number}.jpg` : `${base}.${extension}`
 }
+
+const entryImageUrls = (entry) => entry.images?.length
+  ? entry.images.map((path) => `${assetBase}assets/${path}`)
+  : [entryImageUrl(entry)]
 
 const categoryIcons = {
   bcc: Aperture,
@@ -48,6 +54,7 @@ const categoryIcons = {
   material: Box,
   builtin: Layers3,
   scripts: Braces,
+  'blender-geometry': Box,
 }
 
 function AmbientField() {
@@ -211,7 +218,21 @@ function ScrollBlur() {
   )
 }
 
-function Sidebar({ activeCategory, onCategoryChange, open, onClose }) {
+function Sidebar({ activePlatform, activeCategory, onPlatformChange, onCategoryChange, open, onClose }) {
+  const visibleCategories = activePlatform === 'all'
+    ? categories
+    : categories.filter((category) => category.platform === activePlatform)
+
+  const choosePlatform = (platformId) => {
+    onPlatformChange(platformId)
+    onClose()
+  }
+
+  const chooseCategory = (categoryId) => {
+    onCategoryChange(categoryId)
+    onClose()
+  }
+
   return (
     <>
       <button className={`sidebar-backdrop ${open ? 'is-open' : ''}`} type="button" aria-label="关闭分类菜单" onClick={onClose} />
@@ -221,16 +242,34 @@ function Sidebar({ activeCategory, onCategoryChange, open, onClose }) {
           <div><strong>王恩涛</strong><small>VFX KNOWLEDGE BASE</small></div>
         </div>
 
+        <nav className="platform-nav" aria-label="知识库平台">
+          <span className="nav-label">按平台浏览</span>
+          <div className="platform-nav-list">
+            {platforms.map((platform) => {
+              const count = platform.id === 'all'
+                ? allEntries.length
+                : allEntries.filter((entry) => entry.platform === platform.id).length
+              return (
+                <button className={`platform-nav-item tone-${platform.tone} ${activePlatform === platform.id ? 'is-active' : ''}`} type="button" onClick={() => choosePlatform(platform.id)} key={platform.id}>
+                  <span><strong>{platform.label}</strong><small>{platform.english}</small></span>
+                  <b>{count}</b>
+                </button>
+              )
+            })}
+          </div>
+        </nav>
+
         <nav className="category-nav" aria-label="知识库分类">
-          <button className={`category-nav-item ${activeCategory === 'all' ? 'is-active' : ''}`} type="button" onClick={() => { onCategoryChange('all'); onClose() }}>
+          <span className="nav-label">按分类浏览</span>
+          <button className={`category-nav-item ${activeCategory === 'all' ? 'is-active' : ''}`} type="button" onClick={() => chooseCategory('all')}>
             <BookOpen size={18} />
-            <span><strong>全部记录</strong><small>ALL NOTES</small></span>
-            <b>{allEntries.length}</b>
+            <span><strong>全部记录</strong><small>{activePlatform === 'all' ? 'ALL NOTES' : 'CURRENT PLATFORM'}</small></span>
+            <b>{activePlatform === 'all' ? allEntries.length : allEntries.filter((entry) => entry.platform === activePlatform).length}</b>
           </button>
-          {categories.map((category) => {
+          {visibleCategories.map((category) => {
             const Icon = categoryIcons[category.id]
             return (
-              <button className={`category-nav-item tone-${category.tone} ${activeCategory === category.id ? 'is-active' : ''}`} type="button" onClick={() => { onCategoryChange(category.id); onClose() }} key={category.id}>
+              <button className={`category-nav-item tone-${category.tone} ${activeCategory === category.id ? 'is-active' : ''}`} type="button" onClick={() => chooseCategory(category.id)} key={category.id}>
                 <Icon size={18} />
                 <span><strong>{category.label}</strong><small>{category.english}</small></span>
                 <b>{category.entries.length}</b>
@@ -241,7 +280,7 @@ function Sidebar({ activeCategory, onCategoryChange, open, onClose }) {
 
         <div className="sidebar-footer">
           <span>持续整理 / 2026</span>
-          <a href={notionHome} target="_blank" rel="noreferrer">原始 Notion <ExternalLink size={14} /></a>
+          <a href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">原始 Notion <ExternalLink size={14} /></a>
         </div>
       </aside>
     </>
@@ -249,6 +288,8 @@ function Sidebar({ activeCategory, onCategoryChange, open, onClose }) {
 }
 
 function DetailDrawer({ entry, onClose, onImageOpen }) {
+  const imageUrls = entry ? entryImageUrls(entry) : []
+
   useEffect(() => {
     if (!entry) return undefined
     const closeOnEscape = (event) => {
@@ -273,12 +314,16 @@ function DetailDrawer({ entry, onClose, onImageOpen }) {
               <button type="button" onClick={onClose} aria-label="关闭详情"><X size={20} /></button>
             </header>
             <div className="detail-index"><span>{entry.number}</span><i /></div>
-            <button className="detail-media-trigger" type="button" onClick={() => onImageOpen(entryImageUrl(entry), `${entry.title} 案例图`)} aria-label="放大案例图">
-              <figure className="detail-media">
-                <img src={entryImageUrl(entry)} alt={`${entry.title} 案例图`} loading="lazy" decoding="async" />
-                <span className="detail-media-hint">点击查看大图</span>
-              </figure>
-            </button>
+            <div className="detail-media-list">
+              {imageUrls.map((image, index) => (
+                <button className="detail-media-trigger" type="button" onClick={() => onImageOpen(image, `${entry.title} 案例图 ${index + 1}`)} aria-label={`放大案例图 ${index + 1}`} key={image}>
+                  <figure className="detail-media">
+                    <img src={image} alt={`${entry.title} 案例图 ${index + 1}`} loading={index === 0 ? 'eager' : 'lazy'} decoding="async" />
+                    <span className="detail-media-hint">点击查看大图</span>
+                  </figure>
+                </button>
+              ))}
+            </div>
             <div className="detail-copy">
               <span className={`detail-category tone-text-${entry.tone}`}>{entry.category}</span>
               <h2>{entry.title}</h2>
@@ -323,6 +368,7 @@ function ImageLightbox({ image, alt, onClose }) {
 }
 
 function App() {
+  const [activePlatform, setActivePlatform] = useState('all')
   const [activeCategory, setActiveCategory] = useState('all')
   const [query, setQuery] = useState('')
   const [selectedEntry, setSelectedEntry] = useState(null)
@@ -332,18 +378,50 @@ function App() {
   const appRef = useRef(null)
   const heroArtRef = useRef(null)
 
+  const activePlatformInfo = platforms.find((platform) => platform.id === activePlatform) || platforms[0]
+  const visibleCategories = activePlatform === 'all'
+    ? categories
+    : categories.filter((category) => category.platform === activePlatform)
+  const scopedEntries = useMemo(() => activePlatform === 'all'
+    ? allEntries
+    : allEntries.filter((entry) => entry.platform === activePlatform), [activePlatform])
+
   const filteredEntries = useMemo(() => {
     const normalized = deferredQuery.trim().toLowerCase()
-    return allEntries.filter((entry) => {
+    return scopedEntries.filter((entry) => {
       const inCategory = activeCategory === 'all' || entry.categoryId === activeCategory
-      const searchable = `${entry.title} ${entry.note} ${entry.category} ${entry.tags.join(' ')}`.toLowerCase()
+      const searchable = `${entry.title} ${entry.note} ${entry.category} ${entry.categoryEnglish} ${entry.platform} ${entry.tags.join(' ')}`.toLowerCase()
       return inCategory && (!normalized || searchable.includes(normalized))
     })
-  }, [activeCategory, deferredQuery])
+  }, [activeCategory, deferredQuery, scopedEntries])
 
-  const activeLabel = activeCategory === 'all'
-    ? '全部记录'
-    : categories.find((category) => category.id === activeCategory)?.label
+  const activeCategoryInfo = categories.find((category) => category.id === activeCategory)
+  const activeLabel = activeCategoryInfo?.label || activePlatformInfo.label
+  const heroCopy = activePlatform === 'blender'
+    ? {
+        eyebrow: 'BLENDER / GEOMETRY NODES / NOTES',
+        summary: '把几何节点中的运算关系、曲线逻辑和案例整理成可复用的制作索引。',
+        cover: `${assetBase}assets/blender/07-repeat-example.png`,
+        caption: '几何节点案例记录',
+      }
+    : activePlatform === 'ae'
+      ? {
+          eyebrow: 'AFTER EFFECTS / PLUGINS / WORKFLOW',
+          summary: '围绕 After Effects 插件、脚本与画面处理整理的个人制作索引。',
+          cover: `${assetBase}assets/knowledge-cover.jpg`,
+          caption: 'After Effects 制作记录',
+        }
+      : {
+          eyebrow: 'AFTER EFFECTS / BLENDER / WORKFLOW',
+          summary: '把常用工具、节点逻辑与画面处理经验收进一套可检索的视效制作索引。',
+          cover: `${assetBase}assets/knowledge-cover.jpg`,
+          caption: '视效制作知识索引',
+        }
+
+  const choosePlatform = (platformId) => {
+    setActivePlatform(platformId)
+    setActiveCategory('all')
+  }
 
   useLayoutEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -395,36 +473,36 @@ function App() {
     <div className="knowledge-app" ref={appRef}>
       <AmbientField />
       <ScrollBlur />
-      <Sidebar activeCategory={activeCategory} onCategoryChange={setActiveCategory} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar activePlatform={activePlatform} activeCategory={activeCategory} onPlatformChange={choosePlatform} onCategoryChange={setActiveCategory} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="app-main">
         <header className="utility-bar">
           <button className="mobile-menu" type="button" onClick={() => setSidebarOpen(true)} aria-label="打开分类菜单"><Menu size={19} /></button>
           <div className="breadcrumb"><span>FX NOTES</span><i /> <strong>{activeLabel}</strong></div>
-          <a className="source-link" href={notionHome} target="_blank" rel="noreferrer">NOTION SOURCE <ArrowUpRight size={16} /></a>
+          <a className="source-link" href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION SOURCE <ArrowUpRight size={16} /></a>
         </header>
 
         <section className="knowledge-hero">
           <div className="hero-copy">
-            <span className="hero-eyebrow">AE PLUGINS / SCRIPTS / WORKFLOW</span>
+            <span className="hero-eyebrow">{heroCopy.eyebrow}</span>
             <h1 className="knowledge-title"><WarpText text="视效知识库" /></h1>
-            <p className="hero-summary">围绕 After Effects 插件、脚本与画面处理方法整理的个人制作索引。</p>
+            <p className="hero-summary">{heroCopy.summary}</p>
             <label className="search-shell">
               <Search size={20} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索插件、效果或关键词" aria-label="搜索知识库" />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索工具、节点或关键词" aria-label="搜索知识库" />
               <kbd>{filteredEntries.length}</kbd>
             </label>
             <div className="hero-stats">
-              <div className="hero-stat"><strong>{allEntries.length}</strong><span>条记录<br />NOTES</span></div>
-              <div className="hero-stat"><strong>{categories.length}</strong><span>个分类<br />SECTIONS</span></div>
-              <div className="hero-stat"><strong>AE</strong><span>制作工具<br />AFTER EFFECTS</span></div>
+              <div className="hero-stat"><strong>{scopedEntries.length}</strong><span>条记录<br />当前平台</span></div>
+              <div className="hero-stat"><strong>{visibleCategories.length}</strong><span>个分类<br />知识分组</span></div>
+              <div className="hero-stat"><strong>{activePlatformInfo.short}</strong><span>制作工具<br />{activePlatformInfo.label}</span></div>
             </div>
           </div>
           <div className="hero-art" ref={heroArtRef}>
-            <img src={`${assetBase}assets/knowledge-cover.jpg`} alt="视觉作品局部" fetchPriority="high" decoding="async" />
+            <img src={heroCopy.cover} alt={heroCopy.caption} fetchPriority="high" decoding="async" />
             <div className="hero-art-wash" />
-            <span className="art-index">INDEX / 090</span>
-            <span className="art-caption">个人视效制作记录</span>
+            <span className="art-index">INDEX / {String(scopedEntries.length).padStart(3, '0')}</span>
+            <span className="art-caption">{heroCopy.caption}</span>
           </div>
         </section>
 
@@ -436,7 +514,7 @@ function App() {
 
           <div className="filter-strip" role="tablist" aria-label="快速分类筛选">
             <button className={activeCategory === 'all' ? 'is-active' : ''} type="button" onClick={() => setActiveCategory('all')}>全部</button>
-            {categories.map((category) => <button className={activeCategory === category.id ? 'is-active' : ''} type="button" onClick={() => setActiveCategory(category.id)} key={category.id}>{category.label}</button>)}
+            {visibleCategories.map((category) => <button className={activeCategory === category.id ? 'is-active' : ''} type="button" onClick={() => setActiveCategory(category.id)} key={category.id}>{category.label}</button>)}
           </div>
 
           {filteredEntries.length ? (
@@ -453,14 +531,14 @@ function App() {
               ))}
             </div>
           ) : (
-            <div className="empty-state"><Search size={26} /><h3>没有找到对应记录</h3><p>尝试使用插件英文名、效果类型或其他关键词。</p><button type="button" onClick={() => setQuery('')}>清除搜索</button></div>
+            <div className="empty-state"><Search size={26} /><h3>没有找到对应记录</h3><p>尝试使用工具名称、节点类型或其他关键词。</p><button type="button" onClick={() => setQuery('')}>清除搜索</button></div>
           )}
         </section>
 
         <footer className="site-footer">
           <span>© 2026 王恩涛 / 视效知识库</span>
-          <span>AE 插件与制作经验索引</span>
-          <a href={notionHome} target="_blank" rel="noreferrer">NOTION <ArrowUpRight size={14} /></a>
+          <span>AE 与 Blender 制作经验索引</span>
+          <a href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION <ArrowUpRight size={14} /></a>
         </footer>
       </main>
 

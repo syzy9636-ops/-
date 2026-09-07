@@ -1,10 +1,18 @@
 export const notionHome = 'https://app.notion.com/p/3d2b7a683ee780978d25c7036df98238?source=copy_link'
+export const blenderHome = 'https://app.notion.com/p/Blender-3d2b7a683ee78001a2f0d5b0b83b9302?pvs=25'
 
-const item = (title, note, tags = []) => ({ title, note, tags })
+export const platforms = [
+  { id: 'all', label: '全部内容', english: 'ALL NOTES', short: 'ALL', tone: 'gold' },
+  { id: 'ae', label: 'After Effects', english: 'AE ECOSYSTEM', short: 'AE', tone: 'gold' },
+  { id: 'blender', label: 'Blender', english: 'GEOMETRY NODES', short: 'BLENDER', tone: 'violet' },
+]
+
+const item = (title, note, tags = [], images = []) => ({ title, note, tags, images })
 
 export const categories = [
   {
     id: 'bcc',
+    platform: 'ae',
     label: 'BCC 系列',
     english: 'BORIS CONTINUUM',
     short: 'BCC',
@@ -32,6 +40,7 @@ export const categories = [
   },
   {
     id: 'psoft',
+    platform: 'ae',
     label: 'PSOFT 系列',
     english: 'PSOFT EFFECTS',
     short: 'PSOFT',
@@ -67,6 +76,7 @@ export const categories = [
   },
   {
     id: 'visual',
+    platform: 'ae',
     label: '画面效果类',
     english: 'IMAGE EFFECTS',
     short: 'FX',
@@ -105,6 +115,7 @@ export const categories = [
   },
   {
     id: 'material',
+    platform: 'ae',
     label: '素材制作类',
     english: 'ASSET MAKING',
     short: 'MAKE',
@@ -120,6 +131,7 @@ export const categories = [
   },
   {
     id: 'builtin',
+    platform: 'ae',
     label: 'AE 内置效果',
     english: 'NATIVE EFFECTS',
     short: 'AE',
@@ -139,6 +151,7 @@ export const categories = [
   },
   {
     id: 'scripts',
+    platform: 'ae',
     label: 'AE 脚本类',
     english: 'AUTOMATION',
     short: 'SCRIPT',
@@ -153,6 +166,24 @@ export const categories = [
       item('InstantRecipe', '把效果链、关键帧、表达式、遮罩和图层样式保存为 JSON，并迁移到其他工程。', ['预设', '迁移']),
     ],
   },
+  {
+    id: 'blender-geometry',
+    platform: 'blender',
+    label: '几何节点',
+    english: 'GEOMETRY NODES',
+    short: 'GN',
+    tone: 'violet',
+    source: blenderHome,
+    entries: [
+      item('相加', '将两个输入值相加；开启钳制后，会把结果限制在 0 到 1 之间。', ['运算', '钳制'], ['blender/01-add.png']),
+      item('相减', '用第一个输入值减去第二个输入值，也可以配合区间翻转做反向控制。', ['运算', '区间'], ['blender/02-subtract.png']),
+      item('相乘', '将两个输入值相乘；开启钳制后，会把结果限制在 0 到 1 之间。', ['运算', '钳制'], ['blender/03-multiply.png']),
+      item('相除', '用第一个输入值除以第二个输入值，适合建立比例和归一化关系。', ['运算', '比例'], ['blender/04-divide.png']),
+      item('正弦', '按正弦曲线输出循环波段，可用 pi、2pi 和常用角度控制重复节奏。', ['波形', '循环'], ['blender/05-sine.png']),
+      item('余弦', '按余弦曲线输出循环波段；切换成正弦时，可在前方减去 pi / 2。', ['波形', '循环'], ['blender/06-cosine.png', 'blender/06-cosine-chart.jpg']),
+      item('重复', '几何数据经过效果区和输出点后回到接入点，形成可控的迭代结构。', ['迭代', '结构'], ['blender/07-repeat.png', 'blender/07-repeat-example.png']),
+    ],
+  },
 ]
 
 export const allEntries = categories.flatMap((category) =>
@@ -163,6 +194,7 @@ export const allEntries = categories.flatMap((category) =>
     categoryId: category.id,
     category: category.label,
     categoryEnglish: category.english,
+    platform: category.platform,
     tone: category.tone,
     source: category.source,
   })),
