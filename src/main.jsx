@@ -20,6 +20,10 @@ import { allEntries, blenderHome, categories, notionHome, platforms } from './da
 import './styles.css'
 
 const assetBase = import.meta.env.BASE_URL
+const backgroundVideos = [
+  { bvid: 'BV12719BzEKD', playbackMs: 250800 },
+  { bvid: 'BV14moRYUELm', playbackMs: 15800 },
+]
 
 const entryAssetExtensions = {
   bcc: ['webp', 'webp', 'gif', 'gif', 'gif', 'gif', 'gif', 'gif', 'webp', 'gif', 'gif', 'gif', 'webp', 'gif', 'webp', 'webp', 'gif'],
@@ -55,6 +59,60 @@ const categoryIcons = {
   builtin: Layers3,
   scripts: Braces,
   'blender-geometry': Box,
+}
+
+function BackgroundVideo() {
+  const [activeVideo, setActiveVideo] = useState(0)
+  const [loadedVideo, setLoadedVideo] = useState(-1)
+
+  useEffect(() => {
+    if (loadedVideo !== activeVideo || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+
+    let timer = 0
+    let startedAt = 0
+    let remaining = backgroundVideos[activeVideo].playbackMs
+    const scheduleNext = () => {
+      window.clearTimeout(timer)
+      startedAt = window.performance.now()
+      timer = window.setTimeout(() => {
+        setActiveVideo((current) => (current + 1) % backgroundVideos.length)
+      }, remaining)
+    }
+    const handleVisibility = () => {
+      if (document.hidden) {
+        remaining = Math.max(1000, remaining - (window.performance.now() - startedAt))
+        window.clearTimeout(timer)
+      } else {
+        scheduleNext()
+      }
+    }
+
+    scheduleNext()
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [activeVideo, loadedVideo])
+
+  const { bvid } = backgroundVideos[activeVideo]
+  const playerUrl = `https://player.bilibili.com/player.html?bvid=${bvid}&page=1&high_quality=1&danmaku=0&autoplay=1&muted=1&hideCoverInfo=1&t=0`
+
+  return (
+    <div className="background-video" aria-hidden="true">
+      <iframe
+        className="background-video-player"
+        key={bvid}
+        src={playerUrl}
+        title=""
+        tabIndex="-1"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        referrerPolicy="strict-origin-when-cross-origin"
+        onLoad={() => setLoadedVideo(activeVideo)}
+      />
+      <div className="background-video-shade" />
+    </div>
+  )
 }
 
 function AmbientField() {
@@ -471,6 +529,7 @@ function App() {
 
   return (
     <div className="knowledge-app" ref={appRef}>
+      <BackgroundVideo />
       <AmbientField />
       <ScrollBlur />
       <Sidebar activePlatform={activePlatform} activeCategory={activeCategory} onPlatformChange={choosePlatform} onCategoryChange={setActiveCategory} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
