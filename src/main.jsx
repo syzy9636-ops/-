@@ -59,6 +59,7 @@ const categoryIcons = {
   builtin: Layers3,
   scripts: Braces,
   'blender-geometry': Box,
+  'blender-noise': CircleDot,
 }
 
 function BackgroundVideo() {
@@ -457,10 +458,10 @@ function App() {
   const activeLabel = activeCategoryInfo?.label || activePlatformInfo.label
   const heroCopy = activePlatform === 'blender'
     ? {
-        eyebrow: 'BLENDER / GEOMETRY NODES / NOTES',
-        summary: '把几何节点中的运算关系、曲线逻辑和案例整理成可复用的制作索引。',
-        cover: `${assetBase}assets/blender/07-repeat-example.png`,
-        caption: '几何节点案例记录',
+        eyebrow: 'BLENDER / MATH / VECTOR / NOISE',
+        summary: '从标量运算延伸到矢量方向与噪波位移，整理几何节点里可直接查用的关系和案例。',
+        cover: `${assetBase}assets/blender/12-reflect-example-a.png`,
+        caption: 'Blender 节点案例记录',
       }
     : activePlatform === 'ae'
       ? {

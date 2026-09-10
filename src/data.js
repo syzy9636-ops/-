@@ -1,5 +1,5 @@
 export const notionHome = 'https://app.notion.com/p/3d2b7a683ee780978d25c7036df98238?source=copy_link'
-export const blenderHome = 'https://app.notion.com/p/Blender-3d2b7a683ee78001a2f0d5b0b83b9302?pvs=25'
+export const blenderHome = 'https://app.notion.com/p/Blender-3d4b7a683ee78001a2f0d5b0b83b9302?pvs=25'
 
 export const platforms = [
   { id: 'all', label: '全部内容', english: 'ALL NOTES', short: 'ALL', tone: 'gold' },
@@ -169,9 +169,9 @@ export const categories = [
   {
     id: 'blender-geometry',
     platform: 'blender',
-    label: '几何节点',
-    english: 'GEOMETRY NODES',
-    short: 'GN',
+    label: '运算与矢量',
+    english: 'MATH & VECTOR',
+    short: 'MATH',
     tone: 'violet',
     source: blenderHome,
     entries: [
@@ -182,6 +182,26 @@ export const categories = [
       item('正弦', '按正弦曲线输出循环波段，可用 pi、2pi 和常用角度控制重复节奏。', ['波形', '循环'], ['blender/05-sine.png']),
       item('余弦', '按余弦曲线输出循环波段；切换成正弦时，可在前方减去 pi / 2。', ['波形', '循环'], ['blender/06-cosine.png', 'blender/06-cosine-chart.jpg']),
       item('重复', '几何数据经过效果区和输出点后回到接入点，形成可控的迭代结构。', ['迭代', '结构'], ['blender/07-repeat.png', 'blender/07-repeat-example.png']),
+      item('矢量相加', 'A（XYZ）+ B（XYZ）= C（XYZ），分别相加两个矢量的三个轴向分量。', ['矢量', '运算'], ['blender/08-vector-add-a.png', 'blender/08-vector-add-b.png']),
+      item('矢量相减', 'A（XYZ）- B（XYZ）= C（XYZ），结果矢量由 B 指向 A；运算中谁在前方，结果方向就指向谁。', ['矢量', '方向'], ['blender/09-vector-subtract.png']),
+      item('矢量相乘', 'A（XYZ）* B（XYZ）= C（XYZ），除逐轴相乘外，也可用于制作关于指定轴的镜像。', ['矢量', '镜像'], ['blender/10-vector-multiply-a.png', 'blender/10-vector-multiply-b.png', 'blender/10-vector-multiply-c.png']),
+      item('叉乘', '输入矢量 A 与 B 构成一个平面，计算结果是垂直于该平面的矢量。', ['矢量', '法向'], ['blender/11-cross-product-a.png', 'blender/11-cross-product-b.png']),
+      item('反射', '将矢量 A 的末端方向平移到 B 的起点，以 B 为轴翻转相同角度，得到反射后的矢量 C。', ['矢量', '反射'], ['blender/12-reflect-a.png', 'blender/12-reflect-b.png', 'blender/12-reflect-c.png', 'blender/12-reflect-d.png', 'blender/12-reflect-example.gif', 'blender/12-reflect-example-a.png', 'blender/12-reflect-example-b.png']),
+      item('点乘', '两个法向平行时结果为 1，垂直时为 0，方向相反时为负值。', ['矢量', '夹角'], ['blender/13-dot-product-a.png', 'blender/13-dot-product-b.png']),
+      item('距离', '计算两个矢量之间的距离。', ['矢量', '距离'], ['blender/14-distance.png']),
+      item('缩放', '用一个浮点值缩放矢量 A；与矢量相乘的区别是第二个输入为单一数值。', ['矢量', '缩放'], ['blender/15-scale.png']),
+    ],
+  },
+  {
+    id: 'blender-noise',
+    platform: 'blender',
+    label: '噪波基础',
+    english: 'NOISE BASICS',
+    short: 'NOISE',
+    tone: 'blue',
+    source: blenderHome,
+    entries: [
+      item('规格化噪波', '规格化噪波输出 0 到 1，平均值为 0.5。减去矢量值 0.5 后，数值会以 0 为中心分布，让正负方向的位移保持平衡。', ['噪波', '规格化', '位移'], ['blender/09-vector-subtract.png']),
     ],
   },
 ]
