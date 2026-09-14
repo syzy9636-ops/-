@@ -8,11 +8,15 @@ import {
   Braces,
   ChevronRight,
   CircleDot,
+  Download,
   ExternalLink,
+  FileImage,
   Layers3,
   Menu,
+  RefreshCcw,
   Search,
   Sparkles,
+  Wrench,
   X,
 } from 'lucide-react'
 import gsap from 'gsap'
@@ -277,18 +281,209 @@ function ScrollBlur() {
   )
 }
 
-function Sidebar({ activePlatform, activeCategory, onPlatformChange, onCategoryChange, open, onClose }) {
+const rgbaChannels = [
+  { id: 'r', label: '红色通道', description: '写入输出 R', tone: 'coral', fallback: '黑色' },
+  { id: 'g', label: '绿色通道', description: '写入输出 G', tone: 'teal', fallback: '黑色' },
+  { id: 'b', label: '蓝色通道', description: '写入输出 B', tone: 'violet', fallback: '黑色' },
+  { id: 'a', label: '透明通道', description: '写入输出 A', tone: 'paper', fallback: '不透明' },
+]
+
+const decodeLocalImage = (file) => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(file)
+  const image = new Image()
+  image.onload = () => {
+    URL.revokeObjectURL(url)
+    resolve(image)
+  }
+  image.onerror = () => {
+    URL.revokeObjectURL(url)
+    reject(new Error(`无法读取图片：${file.name}`))
+  }
+  image.src = url
+})
+
+function RgbaMergeTool() {
+  const [files, setFiles] = useState({ r: null, g: null, b: null, a: null })
+  const [outputName, setOutputName] = useState('rgba-composite')
+  const [canvasSize, setCanvasSize] = useState(null)
+  const [status, setStatus] = useState('等待上传通道贴图')
+  const canvasRef = useRef(null)
+
+  const activeFiles = Object.values(files).filter(Boolean)
+  const canDownload = Boolean(canvasSize && activeFiles.length)
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!activeFiles.length) {
+      const canvas = canvasRef.current
+      if (canvas) {
+        canvas.width = 1
+        canvas.height = 1
+        canvas.getContext('2d').clearRect(0, 0, 1, 1)
+      }
+      setCanvasSize(null)
+      setStatus('等待上传通道贴图')
+      return undefined
+    }
+
+    setStatus('正在合成…')
+    Promise.all(Object.entries(files).map(async ([channel, file]) => [channel, file ? await decodeLocalImage(file) : null]))
+      .then((decoded) => {
+        if (cancelled) return
+
+        const images = Object.fromEntries(decoded)
+        const width = Math.max(...Object.values(images).filter(Boolean).map((image) => image.naturalWidth || image.width))
+        const height = Math.max(...Object.values(images).filter(Boolean).map((image) => image.naturalHeight || image.height))
+        const output = canvasRef.current
+        if (!output) return
+
+        output.width = width
+        output.height = height
+        const outputContext = output.getContext('2d', { willReadFrequently: true })
+        const outputData = outputContext.createImageData(width, height)
+
+        rgbaChannels.forEach(({ id }) => {
+          const image = images[id]
+          const channelCanvas = document.createElement('canvas')
+          channelCanvas.width = width
+          channelCanvas.height = height
+          const channelContext = channelCanvas.getContext('2d', { willReadFrequently: true })
+          const defaultValue = id === 'a' ? 255 : 0
+
+          if (image) {
+            channelContext.imageSmoothingEnabled = true
+            channelContext.drawImage(image, 0, 0, width, height)
+          }
+
+          const sourceData = image
+            ? channelContext.getImageData(0, 0, width, height).data
+            : null
+          const offset = id === 'r' ? 0 : id === 'g' ? 1 : id === 'b' ? 2 : 3
+
+          for (let index = 0; index < outputData.data.length; index += 4) {
+            const value = sourceData
+              ? Math.round(sourceData[index] * 0.2126 + sourceData[index + 1] * 0.7152 + sourceData[index + 2] * 0.0722)
+              : defaultValue
+            outputData.data[index + offset] = value
+          }
+        })
+
+        outputContext.putImageData(outputData, 0, 0)
+        setCanvasSize({ width, height })
+        setStatus('合成完成，可下载 PNG')
+      })
+      .catch((error) => {
+        if (!cancelled) setStatus(error.message || '图片读取失败')
+      })
+
+    return () => { cancelled = true }
+  }, [files])
+
+  const handleFileChange = (channel, event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setFiles((current) => ({ ...current, [channel]: file }))
+    event.target.value = ''
+  }
+
+  const clearChannel = (channel) => {
+    setFiles((current) => ({ ...current, [channel]: null }))
+  }
+
+  const resetTool = () => {
+    setFiles({ r: null, g: null, b: null, a: null })
+    setOutputName('rgba-composite')
+  }
+
+  const downloadResult = () => {
+    if (!canDownload || !canvasRef.current) return
+    canvasRef.current.toBlob((blob) => {
+      if (!blob) return
+      const safeName = (outputName.trim() || 'rgba-composite')
+        .replace(/\.png$/i, '')
+        .replace(/[\\/:*?"<>|]+/g, '-')
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${safeName}.png`
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    }, 'image/png')
+  }
+
+  return (
+    <section className="rgba-tool" aria-labelledby="rgba-title">
+      <div className="rgba-heading">
+        <div>
+          <span className="tool-eyebrow">EXTENSION TOOL / TEXTURE</span>
+          <h1 id="rgba-title">RGBA 合并</h1>
+          <p>分别指定 R、G、B、A 通道贴图，在浏览器本地合成为一张可下载的 PNG 纹理。</p>
+        </div>
+        <div className="rgba-local-note"><FileImage size={20} /><span>本地处理<br />图片不会上传</span></div>
+      </div>
+
+      <div className="rgba-layout">
+        <div className="rgba-panel rgba-input-panel">
+          <div className="rgba-panel-head"><div><span>01 / CHANNEL INPUT</span><h2>通道贴图</h2></div><span className="rgba-count">{activeFiles.length} / 4 已添加</span></div>
+          <div className="rgba-channel-grid">
+            {rgbaChannels.map((channel) => {
+              const file = files[channel.id]
+              return (
+                <article className={`rgba-channel tone-${channel.tone}`} key={channel.id}>
+                  <div className="rgba-channel-title"><strong>{channel.id.toUpperCase()}</strong><div><h3>{channel.label}</h3><span>{channel.description}</span></div></div>
+                  <label className="rgba-upload">
+                    <FileImage size={18} />
+                    <span>{file ? '替换贴图' : '选择贴图'}</span>
+                    <input type="file" accept="image/*" onChange={(event) => handleFileChange(channel.id, event)} />
+                  </label>
+                  <div className="rgba-file-row">
+                    <span title={file?.name}>{file ? file.name : `未指定，使用${channel.fallback}`}</span>
+                    {file && <button type="button" onClick={() => clearChannel(channel.id)} aria-label={`清除${channel.label}`}><X size={15} /></button>}
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+          <p className="rgba-hint">图片会按亮度值写入对应通道；不同尺寸的贴图会拉伸到当前最大宽高。未提供 R/G/B 时为黑色，未提供 A 时为完全不透明。</p>
+        </div>
+
+        <div className="rgba-panel rgba-output-panel">
+          <div className="rgba-panel-head"><div><span>02 / OUTPUT PREVIEW</span><h2>合成预览</h2></div><span className="rgba-status">{status}</span></div>
+          <div className={`rgba-preview-wrap ${canvasSize ? 'has-preview' : ''}`}>
+            {!canvasSize && <div className="rgba-preview-empty"><FileImage size={32} /><span>添加通道贴图后<br />将在这里预览</span></div>}
+            <div className="rgba-checkerboard"><canvas ref={canvasRef} aria-label="RGBA 合成结果预览" /></div>
+          </div>
+          <div className="rgba-output-controls">
+            <label className="rgba-name-field"><span>输出名称</span><div><input value={outputName} onChange={(event) => setOutputName(event.target.value)} /><b>.png</b></div></label>
+            <div className="rgba-actions"><button className="rgba-reset" type="button" onClick={resetTool}><RefreshCcw size={16} />重置</button><button className="rgba-download" type="button" onClick={downloadResult} disabled={!canDownload}><Download size={17} />下载 PNG</button></div>
+          </div>
+          {canvasSize && <span className="rgba-dimensions">输出尺寸 {canvasSize.width} × {canvasSize.height}px</span>}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Sidebar({ activePlatform, activeCategory, activeTool, onPlatformChange, onCategoryChange, onToolChange, open, onClose }) {
   const visibleCategories = activePlatform === 'all'
     ? categories
     : categories.filter((category) => category.platform === activePlatform)
 
   const choosePlatform = (platformId) => {
     onPlatformChange(platformId)
+    onToolChange(false)
     onClose()
   }
 
   const chooseCategory = (categoryId) => {
     onCategoryChange(categoryId)
+    onToolChange(false)
+    onClose()
+  }
+
+  const chooseTool = () => {
+    onToolChange(true)
     onClose()
   }
 
@@ -335,6 +530,15 @@ function Sidebar({ activePlatform, activeCategory, onPlatformChange, onCategoryC
               </button>
             )
           })}
+        </nav>
+
+        <nav className="tool-nav" aria-label="扩展工具">
+          <span className="nav-label">扩展工具</span>
+          <button className={`category-nav-item tool-nav-item tone-coral ${activeTool ? 'is-active' : ''}`} type="button" onClick={chooseTool}>
+            <Wrench size={18} />
+            <span><strong>RGBA 合并</strong><small>CHANNEL COMPOSITOR</small></span>
+            <b>TOOL</b>
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -429,6 +633,7 @@ function ImageLightbox({ image, alt, onClose }) {
 function App() {
   const [activePlatform, setActivePlatform] = useState('all')
   const [activeCategory, setActiveCategory] = useState('all')
+  const [activeTool, setActiveTool] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedEntry, setSelectedEntry] = useState(null)
   const [lightbox, setLightbox] = useState(null)
@@ -533,15 +738,16 @@ function App() {
       <BackgroundVideo />
       <AmbientField />
       <ScrollBlur />
-      <Sidebar activePlatform={activePlatform} activeCategory={activeCategory} onPlatformChange={choosePlatform} onCategoryChange={setActiveCategory} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar activePlatform={activePlatform} activeCategory={activeCategory} activeTool={activeTool} onPlatformChange={choosePlatform} onCategoryChange={setActiveCategory} onToolChange={setActiveTool} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="app-main">
         <header className="utility-bar">
           <button className="mobile-menu" type="button" onClick={() => setSidebarOpen(true)} aria-label="打开分类菜单"><Menu size={19} /></button>
-          <div className="breadcrumb"><span>FX NOTES</span><i /> <strong>{activeLabel}</strong></div>
-          <a className="source-link" href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION SOURCE <ArrowUpRight size={16} /></a>
+          <div className="breadcrumb"><span>{activeTool ? 'EXTENSION TOOL' : 'FX NOTES'}</span><i /> <strong>{activeTool ? 'RGBA 合并' : activeLabel}</strong></div>
+          {activeTool ? <button className="source-link tool-back-link" type="button" onClick={() => setActiveTool(false)}>返回知识库 <ArrowUpRight size={16} /></button> : <a className="source-link" href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION SOURCE <ArrowUpRight size={16} /></a>}
         </header>
 
+        {activeTool ? <RgbaMergeTool /> : <>
         <section className="knowledge-hero">
           <div className="hero-copy">
             <span className="hero-eyebrow">{heroCopy.eyebrow}</span>
@@ -594,11 +800,12 @@ function App() {
             <div className="empty-state"><Search size={26} /><h3>没有找到对应记录</h3><p>尝试使用工具名称、节点类型或其他关键词。</p><button type="button" onClick={() => setQuery('')}>清除搜索</button></div>
           )}
         </section>
+        </>}
 
         <footer className="site-footer">
-          <span>© 2026 王恩涛 / 视效知识库</span>
-          <span>AE 与 Blender 制作经验索引</span>
-          <a href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION <ArrowUpRight size={14} /></a>
+          <span>© 2026 王恩涛 / {activeTool ? '扩展工具' : '视效知识库'}</span>
+          <span>{activeTool ? '本地纹理合成工具' : 'AE 与 Blender 制作经验索引'}</span>
+          {activeTool ? <button className="footer-tool-link" type="button" onClick={() => setActiveTool(false)}>返回知识库 <ArrowUpRight size={14} /></button> : <a href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION <ArrowUpRight size={14} /></a>}
         </footer>
       </main>
 
