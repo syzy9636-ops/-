@@ -502,8 +502,13 @@ function RgbaSplitTool({ onTransferToMerge }) {
   })
   const [sourceMeta, setSourceMeta] = useState(null)
   const [status, setStatus] = useState('等待导入 RGBA 合并贴图')
+  const [selectedPreviewChannel, setSelectedPreviewChannel] = useState('r')
+  const [referenceFile, setReferenceFile] = useState(null)
+  const [referenceUrl, setReferenceUrl] = useState('')
+  const [referenceMeta, setReferenceMeta] = useState(null)
   const sourcePixelsRef = useRef(null)
   const previewRefs = useRef({})
+  const comparisonCanvasRef = useRef(null)
 
   const meaningFor = (channel) => channelMeanings.find((item) => item.id === mappings[channel]) || channelMeanings[0]
   const labelFor = (channel) => {
@@ -521,6 +526,7 @@ function RgbaSplitTool({ onTransferToMerge }) {
   const outputFileName = (channel) => `${safeFileStem(baseName)}_${packCode}_${channel.toUpperCase()}_${labelFor(channel)}.png`
   const activeMappedChannels = rgbaChannels.filter(({ id }) => mappings[id] !== 'none')
   const hasMappedChannels = activeMappedChannels.length > 0
+  const selectedChannelInfo = rgbaChannels.find(({ id }) => id === selectedPreviewChannel) || rgbaChannels[0]
 
   useEffect(() => {
     try {
@@ -587,11 +593,43 @@ function RgbaSplitTool({ onTransferToMerge }) {
     return () => { cancelled = true }
   }, [sourceFile])
 
+  useEffect(() => {
+    const canvas = comparisonCanvasRef.current
+    if (!canvas) return
+    if (!sourceMeta) {
+      canvas.width = 1
+      canvas.height = 1
+      canvas.getContext('2d').clearRect(0, 0, 1, 1)
+      return
+    }
+    drawChannel(selectedPreviewChannel, canvas)
+  }, [selectedPreviewChannel, sourceMeta])
+
+  useEffect(() => {
+    if (!referenceFile) {
+      setReferenceUrl('')
+      setReferenceMeta(null)
+      return undefined
+    }
+    const url = URL.createObjectURL(referenceFile)
+    setReferenceUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [referenceFile])
+
   const handleSourceChange = (event) => {
     const file = event.target.files?.[0]
     if (!file) return
+    setSourceMeta(null)
     setSourceFile(file)
     setBaseName(safeFileStem(file.name, 'texture'))
+    event.target.value = ''
+  }
+
+  const handleReferenceChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setReferenceMeta(null)
+    setReferenceFile(file)
     event.target.value = ''
   }
 
@@ -671,6 +709,8 @@ function RgbaSplitTool({ onTransferToMerge }) {
 
   const resetTool = () => {
     setSourceFile(null)
+    setReferenceFile(null)
+    setSelectedPreviewChannel('r')
     setBaseName('texture')
     setMappings({ ...emptyChannelMappings })
     setCustomNames({ ...emptyCustomNames })
@@ -696,8 +736,37 @@ function RgbaSplitTool({ onTransferToMerge }) {
         </div>
       </div>
 
+      <div className="split-comparison">
+        <section className="split-compare-panel">
+          <header className="split-compare-head">
+            <div><span>02 / CHANNEL PREVIEW</span><h2>拆分贴图预览</h2></div>
+            <div className="split-channel-tabs" role="tablist" aria-label="切换拆分通道预览">
+              {rgbaChannels.map((channel) => <button className={`tone-${channel.tone} ${selectedPreviewChannel === channel.id ? 'is-active' : ''}`} type="button" role="tab" aria-selected={selectedPreviewChannel === channel.id} onClick={() => setSelectedPreviewChannel(channel.id)} key={channel.id}>{channel.id.toUpperCase()}</button>)}
+            </div>
+          </header>
+          <div className={`split-compare-stage split-channel-stage ${sourceMeta ? 'has-image' : ''}`}>
+            <canvas ref={comparisonCanvasRef} aria-label={`${selectedChannelInfo.label}大图预览`} />
+            {!sourceMeta && <div className="split-compare-empty"><Layers3 size={28} /><span>导入 RGBA 合并贴图后<br />可切换查看四个通道</span></div>}
+            {sourceMeta && <span className="split-stage-badge">{selectedPreviewChannel.toUpperCase()} / {selectedChannelInfo.label}</span>}
+          </div>
+          <footer><span>{sourceFile?.name || '等待合并贴图'}</span><b>{sourceMeta ? `${sourceMeta.width} × ${sourceMeta.height}px` : selectedPreviewChannel.toUpperCase()}</b></footer>
+        </section>
+
+        <section className="split-compare-panel">
+          <header className="split-compare-head">
+            <div><span>REFERENCE / BASE COLOR</span><h2>参考图预览</h2></div>
+            <label className="split-reference-upload"><FileImage size={16} /><span>{referenceFile ? '替换参考图' : '导入参考图'}</span><input type="file" accept="image/*" onChange={handleReferenceChange} /></label>
+          </header>
+          <div className={`split-compare-stage split-reference-stage ${referenceUrl ? 'has-image' : ''}`}>
+            {referenceUrl ? <img src={referenceUrl} alt="Base Color 参考贴图" onLoad={(event) => setReferenceMeta({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} /> : <div className="split-compare-empty"><FileImage size={28} /><span>导入 Base Color 贴图<br />用于对照通道细节</span></div>}
+            {referenceUrl && <span className="split-stage-badge">BASE COLOR</span>}
+          </div>
+          <footer><span title={referenceFile?.name}>{referenceFile?.name || '尚未导入参考图'}</span><div>{referenceMeta && <b>{referenceMeta.width} × {referenceMeta.height}px</b>}{referenceFile && <button type="button" onClick={() => setReferenceFile(null)} aria-label="清除 Base Color 参考图"><X size={14} /></button>}</div></footer>
+        </section>
+      </div>
+
       <div className="split-mapping-head">
-        <div><span>02 / CHANNEL LABELS</span><h2>标注通道用途</h2></div>
+        <div><span>03 / CHANNEL LABELS</span><h2>标注通道用途</h2></div>
       </div>
 
       <div className="split-channel-grid">
