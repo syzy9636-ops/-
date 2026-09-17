@@ -315,10 +315,9 @@ const channelMeanings = [
   { id: 'custom', code: 'X', label: '自定义', fileLabel: 'Custom' },
 ]
 
-const splitPresets = {
-  MEOR: { r: 'metalness', g: 'emissive', b: 'ao', a: 'roughness' },
-  MORE: { r: 'metalness', g: 'ao', b: 'roughness', a: 'emissive' },
-}
+const emptyChannelMappings = { r: 'none', g: 'none', b: 'none', a: 'none' }
+const emptyCustomNames = { r: '', g: '', b: '', a: '' }
+const customPresetStorageKey = 'rgba-custom-channel-presets'
 
 const channelOffsets = { r: 0, g: 1, b: 2, a: 3 }
 
@@ -490,8 +489,17 @@ function RgbaMergeTool({ files, setFiles, outputName, setOutputName }) {
 function RgbaSplitTool({ onTransferToMerge }) {
   const [sourceFile, setSourceFile] = useState(null)
   const [baseName, setBaseName] = useState('texture')
-  const [mappings, setMappings] = useState({ ...splitPresets.MEOR })
-  const [customNames, setCustomNames] = useState({ r: '', g: '', b: '', a: '' })
+  const [mappings, setMappings] = useState({ ...emptyChannelMappings })
+  const [customNames, setCustomNames] = useState({ ...emptyCustomNames })
+  const [presetName, setPresetName] = useState('')
+  const [customPresets, setCustomPresets] = useState(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(customPresetStorageKey) || '[]')
+      return Array.isArray(saved) ? saved.filter((preset) => preset?.id && preset?.name && preset?.mappings) : []
+    } catch {
+      return []
+    }
+  })
   const [sourceMeta, setSourceMeta] = useState(null)
   const [status, setStatus] = useState('等待导入 RGBA 合并贴图')
   const sourcePixelsRef = useRef(null)
@@ -513,6 +521,14 @@ function RgbaSplitTool({ onTransferToMerge }) {
   const outputFileName = (channel) => `${safeFileStem(baseName)}_${packCode}_${channel.toUpperCase()}_${labelFor(channel)}.png`
   const activeMappedChannels = rgbaChannels.filter(({ id }) => mappings[id] !== 'none')
   const hasMappedChannels = activeMappedChannels.length > 0
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(customPresetStorageKey, JSON.stringify(customPresets))
+    } catch {
+      // The tool still works when browser storage is unavailable.
+    }
+  }, [customPresets])
 
   const drawChannel = (channel, targetCanvas) => {
     const source = sourcePixelsRef.current
@@ -579,8 +595,31 @@ function RgbaSplitTool({ onTransferToMerge }) {
     event.target.value = ''
   }
 
-  const applyPreset = (preset) => {
-    setMappings({ ...splitPresets[preset] })
+  const saveCustomPreset = () => {
+    const name = presetName.trim().slice(0, 24)
+    if (!name) return
+    setCustomPresets((current) => {
+      const existing = current.find((preset) => preset.name.toLowerCase() === name.toLowerCase())
+      const nextPreset = {
+        id: existing?.id || `${Date.now()}`,
+        name,
+        mappings: { ...mappings },
+        customNames: { ...customNames },
+      }
+      return existing
+        ? current.map((preset) => preset.id === existing.id ? nextPreset : preset)
+        : [...current, nextPreset]
+    })
+    setPresetName('')
+  }
+
+  const applyCustomPreset = (preset) => {
+    setMappings({ ...emptyChannelMappings, ...preset.mappings })
+    setCustomNames({ ...emptyCustomNames, ...preset.customNames })
+  }
+
+  const removeCustomPreset = (presetId) => {
+    setCustomPresets((current) => current.filter((preset) => preset.id !== presetId))
   }
 
   const updateMapping = (channel, value) => {
@@ -633,8 +672,8 @@ function RgbaSplitTool({ onTransferToMerge }) {
   const resetTool = () => {
     setSourceFile(null)
     setBaseName('texture')
-    setMappings({ ...splitPresets.MEOR })
-    setCustomNames({ r: '', g: '', b: '', a: '' })
+    setMappings({ ...emptyChannelMappings })
+    setCustomNames({ ...emptyCustomNames })
   }
 
   return (
@@ -659,7 +698,6 @@ function RgbaSplitTool({ onTransferToMerge }) {
 
       <div className="split-mapping-head">
         <div><span>02 / CHANNEL LABELS</span><h2>标注通道用途</h2></div>
-        <div className="split-presets"><span>快捷映射</span><button type="button" onClick={() => applyPreset('MEOR')}>MEOR</button><button type="button" onClick={() => applyPreset('MORE')}>MORE</button></div>
       </div>
 
       <div className="split-channel-grid">
@@ -677,6 +715,24 @@ function RgbaSplitTool({ onTransferToMerge }) {
             </article>
           )
         })}
+      </div>
+
+      <div className="split-preset-panel">
+        <div className="split-preset-creator">
+          <label><span>保存当前快捷映射</span><input value={presetName} onChange={(event) => setPresetName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') saveCustomPreset() }} maxLength={24} placeholder="例如：角色材质" /></label>
+          <button type="button" disabled={!presetName.trim()} onClick={saveCustomPreset}>保存映射</button>
+        </div>
+        <div className="split-preset-list" aria-label="自定义快捷映射">
+          {customPresets.length ? customPresets.map((preset) => (
+            <div className="split-preset-chip" key={preset.id}>
+              <button type="button" onClick={() => applyCustomPreset(preset)}><strong>{preset.name}</strong><span>{rgbaChannels.map(({ id }) => {
+                const meaning = channelMeanings.find((item) => item.id === preset.mappings[id]) || channelMeanings[0]
+                return meaning.id === 'custom' ? (preset.customNames?.[id]?.trim().charAt(0) || 'X').toUpperCase() : meaning.code
+              }).join('')}</span></button>
+              <button type="button" onClick={() => removeCustomPreset(preset.id)} aria-label={`删除快捷映射 ${preset.name}`}><X size={14} /></button>
+            </div>
+          )) : <span className="split-preset-empty">设置好通道后命名保存，快捷映射会保留在当前浏览器。</span>}
+        </div>
       </div>
 
       <div className="split-export-bar">
