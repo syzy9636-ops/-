@@ -2,6 +2,7 @@ import React, { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, u
 import { createRoot } from 'react-dom/client'
 import {
   Aperture,
+  ArrowRightLeft,
   ArrowUpRight,
   BookOpen,
   Box,
@@ -14,6 +15,7 @@ import {
   Layers3,
   Menu,
   RefreshCcw,
+  Scissors,
   Search,
   Sparkles,
   Wrench,
@@ -302,9 +304,29 @@ const decodeLocalImage = (file) => new Promise((resolve, reject) => {
   image.src = url
 })
 
-function RgbaMergeTool() {
-  const [files, setFiles] = useState({ r: null, g: null, b: null, a: null })
-  const [outputName, setOutputName] = useState('rgba-composite')
+const channelMeanings = [
+  { id: 'none', code: '-', label: '无 / 不使用', fileLabel: 'Unused' },
+  { id: 'metalness', code: 'M', label: '金属', fileLabel: 'Metalness' },
+  { id: 'emissive', code: 'E', label: '发光', fileLabel: 'Emissive' },
+  { id: 'ao', code: 'O', label: '环境光遮蔽', fileLabel: 'AO' },
+  { id: 'roughness', code: 'R', label: '粗糙', fileLabel: 'Roughness' },
+  { id: 'height', code: 'H', label: '高度', fileLabel: 'Height' },
+  { id: 'mask', code: 'K', label: '遮罩', fileLabel: 'Mask' },
+  { id: 'custom', code: 'X', label: '自定义', fileLabel: 'Custom' },
+]
+
+const splitPresets = {
+  MEOR: { r: 'metalness', g: 'emissive', b: 'ao', a: 'roughness' },
+  MORE: { r: 'metalness', g: 'ao', b: 'roughness', a: 'emissive' },
+}
+
+const channelOffsets = { r: 0, g: 1, b: 2, a: 3 }
+
+const safeFileStem = (value, fallback = 'texture') => (value.trim() || fallback)
+  .replace(/\.[^.]+$/, '')
+  .replace(/[\\/:*?"<>|]+/g, '-')
+
+function RgbaMergeTool({ files, setFiles, outputName, setOutputName }) {
   const [canvasSize, setCanvasSize] = useState(null)
   const [status, setStatus] = useState('等待上传通道贴图')
   const canvasRef = useRef(null)
@@ -465,6 +487,242 @@ function RgbaMergeTool() {
   )
 }
 
+function RgbaSplitTool({ onTransferToMerge }) {
+  const [sourceFile, setSourceFile] = useState(null)
+  const [baseName, setBaseName] = useState('texture')
+  const [mappings, setMappings] = useState({ ...splitPresets.MEOR })
+  const [customNames, setCustomNames] = useState({ r: '', g: '', b: '', a: '' })
+  const [sourceMeta, setSourceMeta] = useState(null)
+  const [status, setStatus] = useState('等待导入 RGBA 合并贴图')
+  const sourcePixelsRef = useRef(null)
+  const previewRefs = useRef({})
+
+  const meaningFor = (channel) => channelMeanings.find((item) => item.id === mappings[channel]) || channelMeanings[0]
+  const labelFor = (channel) => {
+    const meaning = meaningFor(channel)
+    return meaning.id === 'custom'
+      ? safeFileStem(customNames[channel], 'Custom')
+      : meaning.fileLabel
+  }
+  const codeFor = (channel) => {
+    const meaning = meaningFor(channel)
+    if (meaning.id !== 'custom') return meaning.code
+    return (customNames[channel].trim().charAt(0) || 'X').toUpperCase()
+  }
+  const packCode = rgbaChannels.map(({ id }) => codeFor(id)).join('')
+  const outputFileName = (channel) => `${safeFileStem(baseName)}_${packCode}_${channel.toUpperCase()}_${labelFor(channel)}.png`
+  const activeMappedChannels = rgbaChannels.filter(({ id }) => mappings[id] !== 'none')
+  const hasMappedChannels = activeMappedChannels.length > 0
+
+  const drawChannel = (channel, targetCanvas) => {
+    const source = sourcePixelsRef.current
+    if (!source || !targetCanvas) return
+    const { width, height, data } = source
+    targetCanvas.width = width
+    targetCanvas.height = height
+    const context = targetCanvas.getContext('2d')
+    const output = context.createImageData(width, height)
+    const offset = channelOffsets[channel]
+    for (let index = 0; index < data.length; index += 4) {
+      const value = data[index + offset]
+      output.data[index] = value
+      output.data[index + 1] = value
+      output.data[index + 2] = value
+      output.data[index + 3] = 255
+    }
+    context.putImageData(output, 0, 0)
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    if (!sourceFile) {
+      sourcePixelsRef.current = null
+      setSourceMeta(null)
+      setStatus('等待导入 RGBA 合并贴图')
+      Object.values(previewRefs.current).forEach((canvas) => {
+        if (!canvas) return
+        canvas.width = 1
+        canvas.height = 1
+        canvas.getContext('2d').clearRect(0, 0, 1, 1)
+      })
+      return undefined
+    }
+
+    setStatus('正在读取通道…')
+    decodeLocalImage(sourceFile)
+      .then((image) => {
+        if (cancelled) return
+        const width = image.naturalWidth || image.width
+        const height = image.naturalHeight || image.height
+        const sourceCanvas = document.createElement('canvas')
+        sourceCanvas.width = width
+        sourceCanvas.height = height
+        const context = sourceCanvas.getContext('2d', { willReadFrequently: true })
+        context.drawImage(image, 0, 0)
+        sourcePixelsRef.current = context.getImageData(0, 0, width, height)
+        rgbaChannels.forEach(({ id }) => drawChannel(id, previewRefs.current[id]))
+        setSourceMeta({ width, height })
+        setStatus('4 个通道已拆分，可分别下载')
+      })
+      .catch((error) => {
+        if (!cancelled) setStatus(error.message || '图片读取失败')
+      })
+
+    return () => { cancelled = true }
+  }, [sourceFile])
+
+  const handleSourceChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setSourceFile(file)
+    setBaseName(safeFileStem(file.name, 'texture'))
+    event.target.value = ''
+  }
+
+  const applyPreset = (preset) => {
+    setMappings({ ...splitPresets[preset] })
+  }
+
+  const updateMapping = (channel, value) => {
+    setMappings((current) => ({ ...current, [channel]: value }))
+  }
+
+  const downloadChannel = (channel) => {
+    const canvas = previewRefs.current[channel]
+    if (!sourceMeta || !canvas || mappings[channel] === 'none') return
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = outputFileName(channel)
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    }, 'image/png')
+  }
+
+  const downloadAll = () => {
+    activeMappedChannels.forEach(({ id }) => downloadChannel(id))
+  }
+
+  const transferToMerge = async () => {
+    if (!sourceMeta || !hasMappedChannels) return
+    setStatus('正在把拆分结果带入合并…')
+    try {
+      const entries = await Promise.all(activeMappedChannels.map(({ id }) => new Promise((resolve, reject) => {
+        const canvas = previewRefs.current[id]
+        if (!canvas) {
+          reject(new Error(`无法读取 ${id.toUpperCase()} 通道`))
+          return
+        }
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error(`无法生成 ${id.toUpperCase()} 通道贴图`))
+            return
+          }
+          resolve([id, new File([blob], outputFileName(id), { type: 'image/png' })])
+        }, 'image/png')
+      })))
+      onTransferToMerge(Object.fromEntries(entries), `${safeFileStem(baseName)}_${packCode}`)
+      setStatus('已带入合并工具')
+    } catch (error) {
+      setStatus(error.message || '转移失败，请重试')
+    }
+  }
+
+  const resetTool = () => {
+    setSourceFile(null)
+    setBaseName('texture')
+    setMappings({ ...splitPresets.MEOR })
+    setCustomNames({ r: '', g: '', b: '', a: '' })
+  }
+
+  return (
+    <section className="rgba-tool rgba-split-tool" aria-labelledby="rgba-split-title">
+      <div className="rgba-heading">
+        <div>
+          <span className="tool-eyebrow">EXTENSION TOOL / CHANNEL EXTRACTOR</span>
+          <h1 id="rgba-split-title">RGBA 拆分</h1>
+          <p>导入一张合并贴图，为 R、G、B、A 标注实际用途，再按自动生成的语义名称导出四张灰度贴图。</p>
+        </div>
+        <div className="rgba-local-note"><Scissors size={20} /><span>独立拆分工具<br />不会改动原图</span></div>
+      </div>
+
+      <div className="split-source-panel rgba-panel">
+        <div className="rgba-panel-head"><div><span>01 / PACKED TEXTURE</span><h2>导入合并贴图</h2></div><span className="rgba-status">{status}</span></div>
+        <div className="split-source-row">
+          <label className="split-source-upload"><FileImage size={20} /><span>{sourceFile ? '替换合并贴图' : '选择 RGBA 贴图'}</span><input type="file" accept="image/*" onChange={handleSourceChange} /></label>
+          <div className="split-source-info"><strong>{sourceFile?.name || '尚未选择文件'}</strong><span>{sourceMeta ? `${sourceMeta.width} × ${sourceMeta.height}px` : 'PNG / TGA 转换的 PNG / JPG / WEBP'}</span></div>
+          {sourceFile && <button className="split-clear-source" type="button" onClick={() => setSourceFile(null)}><X size={16} />清除</button>}
+        </div>
+      </div>
+
+      <div className="split-mapping-head">
+        <div><span>02 / CHANNEL LABELS</span><h2>标注通道用途</h2></div>
+        <div className="split-presets"><span>快捷映射</span><button type="button" onClick={() => applyPreset('MEOR')}>MEOR</button><button type="button" onClick={() => applyPreset('MORE')}>MORE</button></div>
+      </div>
+
+      <div className="split-channel-grid">
+        {rgbaChannels.map((channel) => {
+          const meaning = meaningFor(channel.id)
+          const isUnused = meaning.id === 'none'
+          return (
+            <article className={`split-channel-card tone-${channel.tone} ${isUnused ? 'is-unused' : ''}`} key={channel.id}>
+              <header><strong>{channel.id.toUpperCase()}</strong><div><span>{channel.label}</span><b>{codeFor(channel.id)}</b></div></header>
+              <div className={`split-preview ${sourceMeta ? 'has-image' : ''}`}><canvas ref={(node) => { previewRefs.current[channel.id] = node }} aria-label={`${channel.label}拆分预览`} />{!sourceMeta && <span>等待贴图</span>}</div>
+              <label className="split-meaning-field"><span>该通道内容</span><select value={mappings[channel.id]} onChange={(event) => updateMapping(channel.id, event.target.value)}>{channelMeanings.map((item) => <option value={item.id} key={item.id}>{item.code} / {item.label}</option>)}</select></label>
+              {meaning.id === 'custom' && <label className="split-custom-field"><span>自定义名称</span><input value={customNames[channel.id]} onChange={(event) => setCustomNames((current) => ({ ...current, [channel.id]: event.target.value }))} placeholder="例如 Specular" /></label>}
+              <div className="split-file-name" title={isUnused ? '该通道不导出' : outputFileName(channel.id)}>{isUnused ? '该通道不导出' : outputFileName(channel.id)}</div>
+              <button className="split-download-one" type="button" disabled={!sourceMeta || isUnused} onClick={() => downloadChannel(channel.id)}><Download size={16} />{isUnused ? '不导出' : '下载此通道'}</button>
+            </article>
+          )
+        })}
+      </div>
+
+      <div className="split-export-bar">
+        <div><span>当前映射</span><strong>{packCode}</strong><p>命名示例：{outputFileName('r')}</p></div>
+        <label className="split-base-name"><span>基础文件名</span><input value={baseName} onChange={(event) => setBaseName(event.target.value)} /></label>
+        <div className="rgba-actions split-actions"><button className="rgba-reset" type="button" onClick={resetTool}><RefreshCcw size={16} />重置</button><button className="split-transfer" type="button" disabled={!sourceMeta || !hasMappedChannels} onClick={transferToMerge}><ArrowRightLeft size={17} />一键带入合并</button><button className="rgba-download" type="button" disabled={!sourceMeta || !hasMappedChannels} onClick={downloadAll}><Download size={17} />下载启用通道</button></div>
+      </div>
+      <p className="rgba-hint split-hint">拆分结果均为不透明灰度 PNG。点击“一键带入合并”会把已启用的结果自动放进合并模式对应通道；选择“无 / 不使用”的通道会保持空置。</p>
+    </section>
+  )
+}
+
+function RgbaToolWorkspace() {
+  const [mode, setMode] = useState('merge')
+  const [mergeFiles, setMergeFiles] = useState({ r: null, g: null, b: null, a: null })
+  const [mergeOutputName, setMergeOutputName] = useState('rgba-composite')
+
+  const receiveSplitChannels = (files, outputName) => {
+    setMergeFiles({ r: null, g: null, b: null, a: null, ...files })
+    setMergeOutputName(outputName)
+    setMode('merge')
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
+
+  return (
+    <div className="rgba-workspace">
+      <div className="rgba-workspace-switcher">
+        <div>
+          <span>RGBA CHANNEL WORKSPACE</span>
+          <strong>{mode === 'merge' ? '组合通道' : '提取通道'}</strong>
+        </div>
+        <div className="rgba-mode-switch" role="tablist" aria-label="切换 RGBA 工具">
+          <button className={mode === 'merge' ? 'is-active' : ''} type="button" role="tab" aria-selected={mode === 'merge'} onClick={() => setMode('merge')}><Layers3 size={17} />合并</button>
+          <button className={mode === 'split' ? 'is-active' : ''} type="button" role="tab" aria-selected={mode === 'split'} onClick={() => setMode('split')}><Scissors size={17} />拆分</button>
+        </div>
+      </div>
+      <div className="rgba-workspace-pane" hidden={mode !== 'merge'}>
+        <RgbaMergeTool files={mergeFiles} setFiles={setMergeFiles} outputName={mergeOutputName} setOutputName={setMergeOutputName} />
+      </div>
+      <div className="rgba-workspace-pane" hidden={mode !== 'split'}>
+        <RgbaSplitTool onTransferToMerge={receiveSplitChannels} />
+      </div>
+    </div>
+  )
+}
+
 function Sidebar({ activePlatform, activeCategory, activeTool, onPlatformChange, onCategoryChange, onToolChange, open, onClose }) {
   const visibleCategories = activePlatform === 'all'
     ? categories
@@ -472,18 +730,18 @@ function Sidebar({ activePlatform, activeCategory, activeTool, onPlatformChange,
 
   const choosePlatform = (platformId) => {
     onPlatformChange(platformId)
-    onToolChange(false)
+    onToolChange(null)
     onClose()
   }
 
   const chooseCategory = (categoryId) => {
     onCategoryChange(categoryId)
-    onToolChange(false)
+    onToolChange(null)
     onClose()
   }
 
-  const chooseTool = () => {
-    onToolChange(true)
+  const chooseTool = (tool) => {
+    onToolChange(tool)
     onClose()
   }
 
@@ -534,11 +792,13 @@ function Sidebar({ activePlatform, activeCategory, activeTool, onPlatformChange,
 
         <nav className="tool-nav" aria-label="扩展工具">
           <span className="nav-label">扩展工具</span>
-          <button className={`category-nav-item tool-nav-item tone-coral ${activeTool ? 'is-active' : ''}`} type="button" onClick={chooseTool}>
-            <Wrench size={18} />
-            <span><strong>RGBA 合并</strong><small>CHANNEL COMPOSITOR</small></span>
-            <b>TOOL</b>
-          </button>
+          <div className="tool-nav-list">
+            <button className={`category-nav-item tool-nav-item tone-coral ${activeTool === 'rgba' ? 'is-active' : ''}`} type="button" onClick={() => chooseTool('rgba')}>
+              <Wrench size={18} />
+              <span><strong>RGBA 通道工具</strong><small>PACK / UNPACK</small></span>
+              <b>TOOL</b>
+            </button>
+          </div>
         </nav>
 
         <div className="sidebar-footer">
@@ -633,7 +893,7 @@ function ImageLightbox({ image, alt, onClose }) {
 function App() {
   const [activePlatform, setActivePlatform] = useState('all')
   const [activeCategory, setActiveCategory] = useState('all')
-  const [activeTool, setActiveTool] = useState(false)
+  const [activeTool, setActiveTool] = useState(null)
   const [query, setQuery] = useState('')
   const [selectedEntry, setSelectedEntry] = useState(null)
   const [lightbox, setLightbox] = useState(null)
@@ -686,6 +946,8 @@ function App() {
     setActivePlatform(platformId)
     setActiveCategory('all')
   }
+
+  const activeToolLabel = 'RGBA 通道工具'
 
   useLayoutEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -743,11 +1005,11 @@ function App() {
       <main className="app-main">
         <header className="utility-bar">
           <button className="mobile-menu" type="button" onClick={() => setSidebarOpen(true)} aria-label="打开分类菜单"><Menu size={19} /></button>
-          <div className="breadcrumb"><span>{activeTool ? 'EXTENSION TOOL' : 'FX NOTES'}</span><i /> <strong>{activeTool ? 'RGBA 合并' : activeLabel}</strong></div>
-          {activeTool ? <button className="source-link tool-back-link" type="button" onClick={() => setActiveTool(false)}>返回知识库 <ArrowUpRight size={16} /></button> : <a className="source-link" href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION SOURCE <ArrowUpRight size={16} /></a>}
+          <div className="breadcrumb"><span>{activeTool ? 'EXTENSION TOOL' : 'FX NOTES'}</span><i /> <strong>{activeTool ? activeToolLabel : activeLabel}</strong></div>
+          {activeTool ? <button className="source-link tool-back-link" type="button" onClick={() => setActiveTool(null)}>返回知识库 <ArrowUpRight size={16} /></button> : <a className="source-link" href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION SOURCE <ArrowUpRight size={16} /></a>}
         </header>
 
-        {activeTool ? <RgbaMergeTool /> : <>
+        {activeTool === 'rgba' ? <RgbaToolWorkspace /> : <>
         <section className="knowledge-hero">
           <div className="hero-copy">
             <span className="hero-eyebrow">{heroCopy.eyebrow}</span>
@@ -804,8 +1066,8 @@ function App() {
 
         <footer className="site-footer">
           <span>© 2026 王恩涛 / {activeTool ? '扩展工具' : '视效知识库'}</span>
-          <span>{activeTool ? '本地纹理合成工具' : 'AE 与 Blender 制作经验索引'}</span>
-          {activeTool ? <button className="footer-tool-link" type="button" onClick={() => setActiveTool(false)}>返回知识库 <ArrowUpRight size={14} /></button> : <a href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION <ArrowUpRight size={14} /></a>}
+          <span>{activeTool ? '本地纹理通道合并与拆分工具' : 'AE 与 Blender 制作经验索引'}</span>
+          {activeTool ? <button className="footer-tool-link" type="button" onClick={() => setActiveTool(null)}>返回知识库 <ArrowUpRight size={14} /></button> : <a href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION <ArrowUpRight size={14} /></a>}
         </footer>
       </main>
 
