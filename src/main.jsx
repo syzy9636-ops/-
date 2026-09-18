@@ -290,19 +290,137 @@ const rgbaChannels = [
   { id: 'a', label: '透明通道', description: '写入输出 A', tone: 'paper', fallback: '不透明' },
 ]
 
-const decodeLocalImage = (file) => new Promise((resolve, reject) => {
-  const url = URL.createObjectURL(file)
-  const image = new Image()
-  image.onload = () => {
-    URL.revokeObjectURL(url)
-    resolve(image)
+const isTgaFile = (file) => /\.tga$/i.test(file.name || '') || /tga/i.test(file.type || '')
+
+const readUInt16 = (bytes, offset) => bytes[offset] | (bytes[offset + 1] << 8)
+
+const decodeTgaPixel = (bytes, offset, depth, grayscale = false) => {
+  if (grayscale) {
+    const value = bytes[offset]
+    return [value, value, value, depth === 16 ? bytes[offset + 1] : 255]
   }
-  image.onerror = () => {
-    URL.revokeObjectURL(url)
-    reject(new Error(`无法读取图片：${file.name}`))
+  if (depth === 15 || depth === 16) {
+    const packed = bytes[offset] | (bytes[offset + 1] << 8)
+    return [
+      Math.round(((packed >> 10) & 31) * 255 / 31),
+      Math.round(((packed >> 5) & 31) * 255 / 31),
+      Math.round((packed & 31) * 255 / 31),
+      packed & 0x8000 ? 255 : 255,
+    ]
   }
-  image.src = url
-})
+  return [bytes[offset + 2], bytes[offset + 1], bytes[offset], depth === 32 ? bytes[offset + 3] : 255]
+}
+
+const decodeTgaImage = async (file) => {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  if (bytes.length < 18) throw new Error(`TGA 文件过小：${file.name}`)
+
+  const colorMapType = bytes[1]
+  const imageType = bytes[2]
+  const colorMapFirst = readUInt16(bytes, 3)
+  const colorMapLength = readUInt16(bytes, 5)
+  const colorMapDepth = bytes[7]
+  const width = readUInt16(bytes, 12)
+  const height = readUInt16(bytes, 14)
+  const pixelDepth = bytes[16]
+  const descriptor = bytes[17]
+  const isRle = imageType === 9 || imageType === 10 || imageType === 11
+  const isColorMapped = imageType === 1 || imageType === 9
+  const isGrayscale = imageType === 3 || imageType === 11
+  const isTrueColor = imageType === 2 || imageType === 10
+
+  if (!width || !height) throw new Error(`TGA 图片尺寸无效：${file.name}`)
+  if (!isColorMapped && !isGrayscale && !isTrueColor) throw new Error('暂不支持这种 TGA 类型，请转换为 24/32 位 TGA')
+  if (colorMapType !== 0 && colorMapType !== 1) throw new Error('TGA 颜色表类型不受支持')
+  if (isColorMapped && colorMapType !== 1) throw new Error('TGA 缺少颜色表')
+  if (isTrueColor && ![16, 24, 32].includes(pixelDepth)) throw new Error('仅支持 16/24/32 位真彩色 TGA')
+  if (isGrayscale && ![8, 16].includes(pixelDepth)) throw new Error('仅支持 8/16 位灰度 TGA')
+  if (isColorMapped && ![8, 16].includes(pixelDepth)) throw new Error('仅支持 8/16 位索引 TGA')
+  if (width * height > 268000000) throw new Error('TGA 图片尺寸过大，无法在浏览器中处理')
+
+  const idLength = bytes[0]
+  const colorMapBytes = colorMapType === 1 ? Math.ceil(colorMapDepth / 8) : 0
+  const colorMapStart = 18 + idLength
+  const pixelStart = colorMapStart + colorMapLength * colorMapBytes
+  const pixelBytes = Math.ceil(pixelDepth / 8)
+  const totalPixels = width * height
+  const imageData = new Uint8ClampedArray(totalPixels * 4)
+  const palette = new Map()
+
+  if (isColorMapped) {
+    if (![15, 16, 24, 32].includes(colorMapDepth)) throw new Error('TGA 颜色表位深不受支持')
+    for (let index = 0; index < colorMapLength; index += 1) {
+      const entryOffset = colorMapStart + index * colorMapBytes
+      palette.set(colorMapFirst + index, decodeTgaPixel(bytes, entryOffset, colorMapDepth))
+    }
+  }
+
+  const originTop = Boolean(descriptor & 0x20)
+  const originRight = Boolean(descriptor & 0x10)
+  let cursor = pixelStart
+  let pixelIndex = 0
+  const writePixel = (pixel) => {
+    const sequentialX = pixelIndex % width
+    const sequentialY = Math.floor(pixelIndex / width)
+    const x = originRight ? width - 1 - sequentialX : sequentialX
+    const y = originTop ? sequentialY : height - 1 - sequentialY
+    const outputOffset = (y * width + x) * 4
+    imageData.set(pixel, outputOffset)
+    pixelIndex += 1
+  }
+
+  const readPixel = () => {
+    if (cursor + pixelBytes > bytes.length) throw new Error(`TGA 像素数据不完整：${file.name}`)
+    if (isColorMapped) {
+      const index = pixelDepth === 16 ? readUInt16(bytes, cursor) : bytes[cursor]
+      cursor += pixelBytes
+      return palette.get(index) || [0, 0, 0, 255]
+    }
+    const pixel = decodeTgaPixel(bytes, cursor, pixelDepth, isGrayscale)
+    cursor += pixelBytes
+    return pixel
+  }
+
+  if (!isRle) {
+    while (pixelIndex < totalPixels) writePixel(readPixel())
+  } else {
+    while (pixelIndex < totalPixels) {
+      if (cursor >= bytes.length) throw new Error(`TGA 像素数据不完整：${file.name}`)
+      const packet = bytes[cursor++]
+      const count = (packet & 0x7f) + 1
+      if (pixelIndex + count > totalPixels) throw new Error(`TGA RLE 数据无效：${file.name}`)
+      if (packet & 0x80) {
+        const pixel = readPixel()
+        for (let repeat = 0; repeat < count; repeat += 1) writePixel(pixel)
+      } else {
+        for (let index = 0; index < count; index += 1) writePixel(readPixel())
+      }
+    }
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  canvas.getContext('2d').putImageData(new ImageData(imageData, width, height), 0, 0)
+  return canvas
+}
+
+const decodeLocalImage = async (file) => {
+  if (isTgaFile(file)) return decodeTgaImage(file)
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+    image.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve(image)
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error(`无法读取图片：${file.name}`))
+    }
+    image.src = url
+  })
+}
 
 const channelMeanings = [
   { id: 'none', code: '-', label: '无 / 不使用', fileLabel: 'Unused' },
@@ -456,7 +574,7 @@ function RgbaMergeTool({ files, setFiles, outputName, setOutputName }) {
                   <label className="rgba-upload">
                     <FileImage size={18} />
                     <span>{file ? '替换贴图' : '选择贴图'}</span>
-                    <input type="file" accept="image/*" onChange={(event) => handleFileChange(channel.id, event)} />
+                    <input type="file" accept="image/*,.tga" onChange={(event) => handleFileChange(channel.id, event)} />
                   </label>
                   <div className="rgba-file-row">
                     <span title={file?.name}>{file ? file.name : `未指定，使用${channel.fallback}`}</span>
@@ -606,14 +724,35 @@ function RgbaSplitTool({ onTransferToMerge }) {
   }, [selectedPreviewChannel, sourceMeta])
 
   useEffect(() => {
+    let cancelled = false
+    let objectUrl = ''
     if (!referenceFile) {
       setReferenceUrl('')
       setReferenceMeta(null)
       return undefined
     }
-    const url = URL.createObjectURL(referenceFile)
-    setReferenceUrl(url)
-    return () => URL.revokeObjectURL(url)
+
+    setReferenceUrl('')
+    setReferenceMeta(null)
+    if (isTgaFile(referenceFile)) {
+      decodeTgaImage(referenceFile)
+        .then((canvas) => {
+          if (cancelled) return
+          setReferenceUrl(canvas.toDataURL('image/png'))
+          setReferenceMeta({ width: canvas.width, height: canvas.height })
+        })
+        .catch(() => {
+          if (!cancelled) setReferenceFile(null)
+        })
+    } else {
+      objectUrl = URL.createObjectURL(referenceFile)
+      setReferenceUrl(objectUrl)
+    }
+
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
   }, [referenceFile])
 
   const handleSourceChange = (event) => {
@@ -730,8 +869,8 @@ function RgbaSplitTool({ onTransferToMerge }) {
       <div className="split-source-panel rgba-panel">
         <div className="rgba-panel-head"><div><span>01 / PACKED TEXTURE</span><h2>导入合并贴图</h2></div><span className="rgba-status">{status}</span></div>
         <div className="split-source-row">
-          <label className="split-source-upload"><FileImage size={20} /><span>{sourceFile ? '替换合并贴图' : '选择 RGBA 贴图'}</span><input type="file" accept="image/*" onChange={handleSourceChange} /></label>
-          <div className="split-source-info"><strong>{sourceFile?.name || '尚未选择文件'}</strong><span>{sourceMeta ? `${sourceMeta.width} × ${sourceMeta.height}px` : 'PNG / TGA 转换的 PNG / JPG / WEBP'}</span></div>
+          <label className="split-source-upload"><FileImage size={20} /><span>{sourceFile ? '替换合并贴图' : '选择 RGBA 贴图'}</span><input type="file" accept="image/*,.tga" onChange={handleSourceChange} /></label>
+          <div className="split-source-info"><strong>{sourceFile?.name || '尚未选择文件'}</strong><span>{sourceMeta ? `${sourceMeta.width} × ${sourceMeta.height}px` : 'PNG / TGA / JPG / WEBP'}</span></div>
           {sourceFile && <button className="split-clear-source" type="button" onClick={() => setSourceFile(null)}><X size={16} />清除</button>}
         </div>
       </div>
@@ -755,7 +894,7 @@ function RgbaSplitTool({ onTransferToMerge }) {
         <section className="split-compare-panel">
           <header className="split-compare-head">
             <div><span>REFERENCE / BASE COLOR</span><h2>参考图预览</h2></div>
-            <label className="split-reference-upload"><FileImage size={16} /><span>{referenceFile ? '替换参考图' : '导入参考图'}</span><input type="file" accept="image/*" onChange={handleReferenceChange} /></label>
+            <label className="split-reference-upload"><FileImage size={16} /><span>{referenceFile ? '替换参考图' : '导入参考图'}</span><input type="file" accept="image/*,.tga" onChange={handleReferenceChange} /></label>
           </header>
           <div className={`split-compare-stage split-reference-stage ${referenceUrl ? 'has-image' : ''}`}>
             {referenceUrl ? <img src={referenceUrl} alt="Base Color 参考贴图" onLoad={(event) => setReferenceMeta({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} /> : <div className="split-compare-empty"><FileImage size={28} /><span>导入 Base Color 贴图<br />用于对照通道细节</span></div>}
