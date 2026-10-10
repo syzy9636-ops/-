@@ -6,13 +6,23 @@ import {
   ArrowUpRight,
   BookOpen,
   Box,
+  Bookmark,
   Braces,
+  Calculator,
   ChevronRight,
   CircleDot,
   Download,
   ExternalLink,
   FileImage,
   Layers3,
+  Mountain,
+  Move,
+  Palette,
+  Scan,
+  SlidersHorizontal,
+  Compass,
+  Waves,
+  Workflow,
   Menu,
   RefreshCcw,
   Scissors,
@@ -23,9 +33,27 @@ import {
 } from 'lucide-react'
 import gsap from 'gsap'
 import { allEntries, blenderHome, categories, notionHome, platforms } from './data'
+import { matchesEntry, ueHome } from './ueMaterials.js'
+import { MaterialDetails } from './MaterialGuide.jsx'
+import BlenderShaderDetails from './BlenderShaderDetails.jsx'
+import { blenderManual } from './blenderShader.js'
+import PlatformArtwork from './PlatformArtwork.jsx'
 import './styles.css'
+import './material-guide.css'
+import './blender-guide.css'
 
 const assetBase = import.meta.env.BASE_URL
+const platformCounts = Object.fromEntries(platforms.map(({ id }) => [id, allEntries.filter((entry) => entry.platform === id).length]))
+const sourceForPlatform = (platform) => platform === 'ue'
+  ? { url: ueHome, label: 'Epic文档' }
+  : platform === 'blender-material'
+    ? { url: blenderManual, label: 'Blender 文档' }
+    : { url: platform === 'blender-geometry' ? blenderHome : notionHome, label: '原始 Notion' }
+const initialPlatform = () => {
+  const requested = new URLSearchParams(window.location.search).get('platform')
+  const platformId = requested === 'blender' ? 'blender-geometry' : requested
+  return platforms.some((platform) => platform.id === platformId) ? platformId : 'all'
+}
 const backgroundVideos = [
   { bvid: 'BV12719BzEKD', playbackMs: 250800 },
   { bvid: 'BV14moRYUELm', playbackMs: 15800 },
@@ -41,12 +69,14 @@ const entryAssetExtensions = {
 }
 
 const entryImageUrl = (entry) => {
+  if (entry.kind === 'material-node' || entry.kind === 'shader-node') return null
   if (entry.images?.length) return `${assetBase}assets/${entry.images[0]}`
   const extension = entryAssetExtensions[entry.categoryId]?.[Number(entry.number) - 1] || 'webp'
   return `${assetBase}assets/knowledge/${entry.categoryId}-${entry.number}.${extension}`
 }
 
 const entryPreviewUrl = (entry) => {
+  if (entry.kind === 'material-node' || entry.kind === 'shader-node') return null
   if (entry.images?.length) return `${assetBase}assets/${entry.images[0]}`
   const extension = entryAssetExtensions[entry.categoryId]?.[Number(entry.number) - 1] || 'webp'
   const base = `${assetBase}assets/knowledge/${entry.categoryId}-${entry.number}`
@@ -55,7 +85,7 @@ const entryPreviewUrl = (entry) => {
 
 const entryImageUrls = (entry) => entry.images?.length
   ? entry.images.map((path) => `${assetBase}assets/${path}`)
-  : [entryImageUrl(entry)]
+  : [entryImageUrl(entry)].filter(Boolean)
 
 const categoryIcons = {
   bcc: Aperture,
@@ -66,6 +96,30 @@ const categoryIcons = {
   scripts: Braces,
   'blender-geometry': Box,
   'blender-noise': CircleDot,
+  'blender-shader-shader': Box,
+  'blender-shader-textures': FileImage,
+  'blender-shader-color': Palette,
+  'blender-shader-displacement': Mountain,
+  'blender-shader-input': Scan,
+  'blender-shader-vector': Compass,
+  'blender-shader-math': Calculator,
+  'blender-shader-volume': Waves,
+  'blender-shader-hair': Sparkles,
+  'blender-shader-output': ArrowUpRight,
+  'blender-shader-logic': Workflow,
+  'blender-shader-layout': Layers3,
+  'ue-basic': SlidersHorizontal,
+  'ue-color': Palette,
+  'ue-texture': FileImage,
+  'ue-uv': Move,
+  'ue-mask': Scan,
+  'ue-normal': Compass,
+  'ue-math': Calculator,
+  'ue-effect': Waves,
+  'ue-particle': Sparkles,
+  'ue-landscape': Mountain,
+  'ue-render': Layers3,
+  'ue-functions': Workflow,
 }
 
 function BackgroundVideo() {
@@ -995,7 +1049,6 @@ function Sidebar({ activePlatform, activeCategory, activeTool, onPlatformChange,
   const choosePlatform = (platformId) => {
     onPlatformChange(platformId)
     onToolChange(null)
-    onClose()
   }
 
   const chooseCategory = (categoryId) => {
@@ -1043,7 +1096,7 @@ function Sidebar({ activePlatform, activeCategory, activeTool, onPlatformChange,
             <b>{activePlatform === 'all' ? allEntries.length : allEntries.filter((entry) => entry.platform === activePlatform).length}</b>
           </button>
           {visibleCategories.map((category) => {
-            const Icon = categoryIcons[category.id]
+            const Icon = categoryIcons[category.id] || BookOpen
             return (
               <button className={`category-nav-item tone-${category.tone} ${activeCategory === category.id ? 'is-active' : ''}`} type="button" onClick={() => chooseCategory(category.id)} key={category.id}>
                 <Icon size={18} />
@@ -1067,33 +1120,48 @@ function Sidebar({ activePlatform, activeCategory, activeTool, onPlatformChange,
 
         <div className="sidebar-footer">
           <span>持续整理 / 2026</span>
-          <a href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">原始 Notion <ExternalLink size={14} /></a>
+          <a href={sourceForPlatform(activePlatform).url} target="_blank" rel="noreferrer">{sourceForPlatform(activePlatform).label} <ExternalLink size={14} /></a>
         </div>
       </aside>
     </>
   )
 }
 
-function DetailDrawer({ entry, onClose, onImageOpen }) {
+function DetailDrawer({ entry, onClose, onImageOpen, savedNodes, onToggleSaved, onRelated }) {
   const imageUrls = entry ? entryImageUrls(entry) : []
+  const drawerRef = useRef(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
 
   useEffect(() => {
     if (!entry) return undefined
+    const previousFocus = document.activeElement
+    const drawer = drawerRef.current
+    drawer.scrollTop = 0
+    drawer.querySelector('button')?.focus({ preventScroll: true })
     const closeOnEscape = (event) => {
-      if (event.key === 'Escape') onClose()
+      if (document.body.classList.contains('lightbox-open')) return
+      if (event.key === 'Escape') closeRef.current()
+      if (event.key === 'Tab') {
+        const controls = drawer.querySelectorAll('button, a[href], input, [tabindex="0"]')
+        const first = controls[0], last = controls[controls.length - 1]
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+      }
     }
     document.addEventListener('keydown', closeOnEscape)
     document.body.classList.add('drawer-open')
     return () => {
       document.removeEventListener('keydown', closeOnEscape)
       document.body.classList.remove('drawer-open')
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
     }
-  }, [entry, onClose])
+  }, [entry?.id])
 
   return (
     <div className={`detail-layer ${entry ? 'is-open' : ''}`} aria-hidden={!entry}>
       <button className="detail-backdrop" type="button" aria-label="关闭详情" onClick={onClose} tabIndex={entry ? 0 : -1} />
-      <aside className="detail-drawer" role="dialog" aria-modal="true" aria-label={entry ? `${entry.title} 详情` : '条目详情'}>
+      <aside ref={drawerRef} className={`detail-drawer ${entry?.kind === 'material-node' || entry?.kind === 'shader-node' ? 'material-drawer' : ''}`} role="dialog" aria-modal="true" aria-label={entry ? `${entry.title} 详情` : '条目详情'}>
         {entry && (
           <>
             <header className="detail-topbar">
@@ -1114,13 +1182,28 @@ function DetailDrawer({ entry, onClose, onImageOpen }) {
             <div className="detail-copy">
               <span className={`detail-category tone-text-${entry.tone}`}>{entry.category}</span>
               <h2>{entry.title}</h2>
+              {entry.subtitle && <div className="material-subtitle">{entry.subtitle}</div>}
               <p>{entry.note}</p>
               <div className="detail-tags">{entry.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+              {entry.kind === 'material-node' && <MaterialDetails key={entry.id} entry={entry} saved={savedNodes.includes(entry.title)} onToggleSaved={onToggleSaved} onRelated={onRelated} />}
+              {entry.kind === 'shader-node' && <BlenderShaderDetails entry={entry} />}
             </div>
             <div className="detail-source">
-              <span>内容来源</span>
-              <p>条目根据个人 Notion 记录整理，原页面可能包含案例图、安装包和补充说明。</p>
-              <a href={entry.source} target="_blank" rel="noreferrer">查看原始记录 <ArrowUpRight size={17} /></a>
+              {entry.kind === 'material-node' ? (
+                <a href={entry.source} target="_blank" rel="noreferrer">Epic文档 <ArrowUpRight size={17} /></a>
+              ) : entry.kind === 'shader-node' ? (
+                <>
+                  <span>内容来源</span>
+                  <p>根据 Blender 官方手册整理；改写内容遵循 CC BY-SA 4.0。</p>
+                  <a href={entry.source} target="_blank" rel="noreferrer">查看 Blender 文档 <ArrowUpRight size={17} /></a>
+                </>
+              ) : (
+                <>
+                  <span>内容来源</span>
+                  <p>条目根据个人 Notion 记录整理，原页面可能包含案例图、安装包和补充说明。</p>
+                  <a href={entry.source} target="_blank" rel="noreferrer">查看原始记录 <ArrowUpRight size={17} /></a>
+                </>
+              )}
             </div>
           </>
         )}
@@ -1155,16 +1238,33 @@ function ImageLightbox({ image, alt, onClose }) {
 }
 
 function App() {
-  const [activePlatform, setActivePlatform] = useState('all')
+  const [activePlatform, setActivePlatform] = useState(initialPlatform)
   const [activeCategory, setActiveCategory] = useState('all')
   const [activeTool, setActiveTool] = useState(null)
   const [query, setQuery] = useState('')
   const [selectedEntry, setSelectedEntry] = useState(null)
   const [lightbox, setLightbox] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [nodeFilter, setNodeFilter] = useState('all')
+  const [visibleCount, setVisibleCount] = useState(24)
+  const [savedNodes, setSavedNodes] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('ue56-saved') || '[]')
+      return Array.isArray(stored) ? stored.filter((value) => typeof value === 'string') : []
+    } catch { return [] }
+  })
+  const [saveNotice, setSaveNotice] = useState('')
   const deferredQuery = useDeferredValue(query)
   const appRef = useRef(null)
   const heroArtRef = useRef(null)
+  const catalogRef = useRef(null)
+
+  const toggleSaved = (name) => {
+    const next = savedNodes.includes(name) ? savedNodes.filter((value) => value !== name) : [...savedNodes, name]
+    setSavedNodes(next)
+    try { localStorage.setItem('ue56-saved', JSON.stringify(next)); setSaveNotice('') }
+    catch { setSaveNotice('浏览器未允许保存收藏，本次打开期间仍可使用。') }
+  }
 
   const activePlatformInfo = platforms.find((platform) => platform.id === activePlatform) || platforms[0]
   const visibleCategories = activePlatform === 'all'
@@ -1175,40 +1275,61 @@ function App() {
     : allEntries.filter((entry) => entry.platform === activePlatform), [activePlatform])
 
   const filteredEntries = useMemo(() => {
-    const normalized = deferredQuery.trim().toLowerCase()
     return scopedEntries.filter((entry) => {
       const inCategory = activeCategory === 'all' || entry.categoryId === activeCategory
-      const searchable = `${entry.title} ${entry.note} ${entry.category} ${entry.categoryEnglish} ${entry.platform} ${entry.tags.join(' ')}`.toLowerCase()
-      return inCategory && (!normalized || searchable.includes(normalized))
+      const inNodeFilter = nodeFilter === 'all' || (activePlatform === 'ue'
+        ? (nodeFilter === 'common' ? entry.common : savedNodes.includes(entry.title))
+        : activePlatform === 'blender-material' && entry.kind === 'shader-node' &&
+          (nodeFilter === 'common' ? entry.common : entry.engine.includes(nodeFilter === 'cycles' ? 'Cycles' : 'Eevee')))
+      return inCategory && inNodeFilter && matchesEntry(entry, deferredQuery)
     })
-  }, [activeCategory, deferredQuery, scopedEntries])
+  }, [activeCategory, activePlatform, deferredQuery, scopedEntries, nodeFilter, savedNodes])
+
+  useEffect(() => { setVisibleCount(24) }, [activeCategory, activePlatform, deferredQuery, nodeFilter])
 
   const activeCategoryInfo = categories.find((category) => category.id === activeCategory)
-  const activeLabel = activeCategoryInfo?.label || activePlatformInfo.label
-  const heroCopy = activePlatform === 'blender'
+  const activeLabel = activeCategoryInfo?.label || (activePlatform === 'ue' ? 'UE 材质节点' : activePlatformInfo.label)
+  const heroCopy = activePlatform === 'ue'
     ? {
-        eyebrow: 'BLENDER / MATH / VECTOR / NOISE',
-        summary: '从标量运算延伸到矢量方向与噪波位移，整理几何节点里可直接查用的关系和案例。',
-        cover: `${assetBase}assets/blender/12-reflect-example-a.png`,
-        caption: 'Blender 节点案例记录',
+        eyebrow: 'UE / MATERIAL LAB',
+        summary: '从数值与贴图，到粒子与表面效果。按用途查找材质节点，在例子与示意中理解输入、运算和结果。',
+      }
+    : activePlatform === 'blender-geometry'
+    ? {
+        eyebrow: 'BLENDER / GEOMETRY NODES',
+        summary: '几何节点制作笔记：从数值运算、矢量关系与噪波控制，整理形态生成和位移的节点逻辑。',
+      }
+    : activePlatform === 'blender-material'
+    ? {
+        eyebrow: 'BLENDER / SHADER NODES',
+        summary: '材质节点速查：从贴图、颜色与表面细节，到着色、体积和最终输出，按用途查找接线与参数。',
       }
     : activePlatform === 'ae'
       ? {
           eyebrow: 'AFTER EFFECTS / PLUGINS / WORKFLOW',
           summary: '围绕 After Effects 插件、脚本与画面处理整理的个人制作索引。',
-          cover: `${assetBase}assets/knowledge-cover.jpg`,
-          caption: 'After Effects 制作记录',
         }
       : {
-          eyebrow: 'AFTER EFFECTS / BLENDER / WORKFLOW',
+          eyebrow: 'AFTER EFFECTS / BLENDER / UNREAL ENGINE',
           summary: '把常用工具、节点逻辑与画面处理经验收进一套可检索的视效制作索引。',
-          cover: `${assetBase}assets/knowledge-cover.jpg`,
-          caption: '视效制作知识索引',
         }
 
   const choosePlatform = (platformId) => {
     setActivePlatform(platformId)
     setActiveCategory('all')
+    setNodeFilter('all')
+    setQuery('')
+    setVisibleCount(24)
+    const url = new URL(window.location.href)
+    if (platformId === 'all') url.searchParams.delete('platform')
+    else url.searchParams.set('platform', platformId)
+    window.history.replaceState(null, '', url)
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
+
+  const chooseCategory = (categoryId) => {
+    setActiveCategory(categoryId)
+    catalogRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' })
   }
 
   const activeToolLabel = 'RGBA 通道工具'
@@ -1219,7 +1340,7 @@ function App() {
     const context = gsap.context(() => {
       const timeline = gsap.timeline({ defaults: { ease: 'expo.out' } })
       if (window.matchMedia('(min-width: 901px)').matches) {
-        timeline.fromTo('.sidebar', { x: -64, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 1 })
+        timeline.fromTo('.sidebar', { x: -64, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 1, clearProps: 'transform,opacity,visibility' })
       }
       timeline
         .fromTo('.utility-bar', { y: -30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.75 }, 0.18)
@@ -1234,11 +1355,19 @@ function App() {
   useLayoutEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduceMotion) return undefined
+    let observer
     const context = gsap.context(() => {
-      gsap.fromTo('.entry-card', { y: 42, autoAlpha: 0, scale: 0.97 }, { y: 0, autoAlpha: 1, scale: 1, duration: 0.68, stagger: 0.025, ease: 'power3.out', overwrite: true })
+      const cards = gsap.utils.toArray('.entry-card')
+      gsap.set(cards, { y: 24, autoAlpha: 0 })
+      observer = new IntersectionObserver((records) => {
+        const visible = records.filter((record) => record.isIntersecting).map((record) => record.target)
+        if (visible.length) gsap.to(visible, { y: 0, autoAlpha: 1, duration: .65, stagger: .045, ease: 'power3.out', overwrite: true })
+        visible.forEach((card) => observer.unobserve(card))
+      }, { rootMargin: '60px' })
+      cards.forEach((card) => observer.observe(card))
     }, appRef)
-    return () => context.revert()
-  }, [activeCategory, deferredQuery])
+    return () => { observer?.disconnect(); context.revert() }
+  }, [filteredEntries, visibleCount, activeTool])
 
   useEffect(() => {
     const art = heroArtRef.current
@@ -1264,13 +1393,13 @@ function App() {
       <BackgroundVideo />
       <AmbientField />
       <ScrollBlur />
-      <Sidebar activePlatform={activePlatform} activeCategory={activeCategory} activeTool={activeTool} onPlatformChange={choosePlatform} onCategoryChange={setActiveCategory} onToolChange={setActiveTool} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar activePlatform={activePlatform} activeCategory={activeCategory} activeTool={activeTool} onPlatformChange={choosePlatform} onCategoryChange={chooseCategory} onToolChange={setActiveTool} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="app-main">
         <header className="utility-bar">
           <button className="mobile-menu" type="button" onClick={() => setSidebarOpen(true)} aria-label="打开分类菜单"><Menu size={19} /></button>
           <div className="breadcrumb"><span>{activeTool ? 'EXTENSION TOOL' : 'FX NOTES'}</span><i /> <strong>{activeTool ? activeToolLabel : activeLabel}</strong></div>
-          {activeTool ? <button className="source-link tool-back-link" type="button" onClick={() => setActiveTool(null)}>返回知识库 <ArrowUpRight size={16} /></button> : <a className="source-link" href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION SOURCE <ArrowUpRight size={16} /></a>}
+          {activeTool ? <button className="source-link tool-back-link" type="button" onClick={() => setActiveTool(null)}>返回知识库 <ArrowUpRight size={16} /></button> : <a className="source-link" href={sourceForPlatform(activePlatform).url} target="_blank" rel="noreferrer">{sourceForPlatform(activePlatform).label} <ArrowUpRight size={16} /></a>}
         </header>
 
         {activeTool === 'rgba' ? <RgbaToolWorkspace /> : <>
@@ -1290,52 +1419,65 @@ function App() {
               <div className="hero-stat"><strong>{activePlatformInfo.short}</strong><span>制作工具<br />{activePlatformInfo.label}</span></div>
             </div>
           </div>
-          <div className="hero-art" ref={heroArtRef}>
-            <img src={heroCopy.cover} alt={heroCopy.caption} fetchPriority="high" decoding="async" />
-            <div className="hero-art-wash" />
-            <span className="art-index">INDEX / {String(scopedEntries.length).padStart(3, '0')}</span>
-            <span className="art-caption">{heroCopy.caption}</span>
+          <div className="hero-art platform-art" ref={heroArtRef}>
+            <PlatformArtwork platform={activePlatform} count={scopedEntries.length} counts={platformCounts} />
           </div>
         </section>
 
-        <section className="catalog" id="catalog">
+        <section className="catalog" id="catalog" ref={catalogRef}>
+          <nav className="catalog-platforms" aria-label="快速切换平台">{platforms.map((platform) => <button type="button" key={platform.id} className={activePlatform === platform.id ? 'is-active' : ''} aria-pressed={activePlatform === platform.id} onClick={() => choosePlatform(platform.id)}>{platform.label}{platform.id === 'ue' && <span>UE</span>}</button>)}</nav>
           <div className="catalog-heading">
             <div><span>KNOWLEDGE INDEX</span><h2>{activeLabel}</h2></div>
             <p>当前显示 <strong>{filteredEntries.length}</strong> 条记录</p>
           </div>
 
           <div className="filter-strip" role="tablist" aria-label="快速分类筛选">
-            <button className={activeCategory === 'all' ? 'is-active' : ''} type="button" onClick={() => setActiveCategory('all')}>全部</button>
-            {visibleCategories.map((category) => <button className={activeCategory === category.id ? 'is-active' : ''} type="button" onClick={() => setActiveCategory(category.id)} key={category.id}>{category.label}</button>)}
+            <button className={activeCategory === 'all' ? 'is-active' : ''} type="button" onClick={() => chooseCategory('all')}>全部</button>
+            {visibleCategories.map((category) => <button className={activeCategory === category.id ? 'is-active' : ''} type="button" onClick={() => chooseCategory(category.id)} key={category.id}>{category.platform === 'ue' && activePlatform === 'all' ? 'UE · ' : ''}{category.label}</button>)}
           </div>
+
+          {activePlatform === 'ue' && <div className="material-index-tools">
+            <div className="material-filters" aria-label="节点筛选">{[['all', '全部节点'], ['common', '常用节点'], ['saved', '已收藏']].map(([id, label]) => <button type="button" key={id} onClick={() => setNodeFilter(id)} aria-pressed={nodeFilter === id} className={nodeFilter === id ? 'is-active' : ''}>{id === 'saved' && <Bookmark size={14} />}{label}</button>)}</div>
+            <p>UE · 表达式与常用材质函数</p>
+          </div>}
+          {activePlatform === 'blender-material' && <div className="material-index-tools">
+            <div className="material-filters" aria-label="Blender 节点筛选">{[['all', '全部'], ['common', '常用材质节点'], ['cycles', 'Cycles'], ['eevee', 'Eevee']].map(([id, label]) => <button type="button" key={id} onClick={() => setNodeFilter(id)} aria-pressed={nodeFilter === id} className={nodeFilter === id ? 'is-active' : ''}>{label}</button>)}</div>
+            <p>Blender · 材质节点</p>
+          </div>}
+          {saveNotice && <p className="save-notice" role="status">{saveNotice}</p>}
 
           {filteredEntries.length ? (
             <div className="entry-grid">
-              {filteredEntries.map((entry) => (
-                <button className={`entry-card tone-${entry.tone}`} type="button" onClick={() => setSelectedEntry(entry)} key={entry.id}>
-                  <span className="entry-number">{entry.number}</span>
-                  <span className="entry-media"><img src={entryPreviewUrl(entry)} alt="" loading="lazy" decoding="async" fetchPriority="low" /></span>
+              {filteredEntries.slice(0, visibleCount).map((entry) => (
+                <button className={`entry-card tone-${entry.tone} ${entry.kind === 'material-node' || entry.kind === 'shader-node' ? 'material-entry' : ''}`} type="button" onClick={() => setSelectedEntry(entry)} key={entry.id}>
+                  <span className="entry-number">{entry.kind === 'material-node' ? `UE / ${entry.number}` : entry.kind === 'shader-node' ? `BL / ${entry.number}` : entry.number}{entry.kind === 'material-node' && savedNodes.includes(entry.title) && <Bookmark size={14} fill="currentColor" />}</span>
+                  {entry.kind !== 'material-node' && entry.kind !== 'shader-node' && <span className="entry-media"><img src={entryPreviewUrl(entry)} alt="" loading="lazy" decoding="async" fetchPriority="low" /></span>}
                   <span className="entry-category">{entry.category}</span>
                   <h3>{entry.title}</h3>
+                  {entry.subtitle && <span className="entry-chinese">{entry.subtitle}</span>}
                   <p>{entry.note}</p>
-                  <span className="entry-footer"><i>{entry.tags[0]}</i><ChevronRight size={18} /></span>
+                  <span className="entry-footer"><i>{entry.tags.slice(0, 3).join(' / ')}</i><ChevronRight size={18} /></span>
                 </button>
               ))}
             </div>
           ) : (
-            <div className="empty-state"><Search size={26} /><h3>没有找到对应记录</h3><p>尝试使用工具名称、节点类型或其他关键词。</p><button type="button" onClick={() => setQuery('')}>清除搜索</button></div>
+            <div className="empty-state"><Search size={26} /><h3>{nodeFilter === 'saved' ? '当前范围内暂无收藏' : '没有找到对应记录'}</h3><p>{nodeFilter === 'saved' ? '打开节点详情即可收藏，也可以放宽分类或搜索条件。' : '尝试使用工具名称、中文释义或用途关键词，例如 lerp、菲涅尔、溶解。'}</p><button type="button" onClick={() => { setQuery(''); setActiveCategory('all'); setNodeFilter('all') }}>重置筛选</button></div>
           )}
+          {filteredEntries.length > visibleCount && <div className="catalog-more"><span>已显示 {Math.min(visibleCount, filteredEntries.length)} / {filteredEntries.length} 条</span><button type="button" onClick={() => setVisibleCount((count) => count + 24)}>加载更多记录 <ChevronRight size={16} /></button></div>}
+          {activePlatform === 'ue' && <p className="material-coverage">整理自 UE 材质节点速查，收录 160 个条目、12 个分类。包含常用参数、纹理表达式与材质函数补充；不涵盖全部插件或 Substrate 节点。每个条目均附对应官方来源。</p>}
+          {activePlatform === 'blender-geometry' && <p className="material-coverage">包含 16 条几何节点制作笔记、2 个分类，保留原始案例图与 Notion 来源。</p>}
+          {activePlatform === 'blender-material' && <p className="material-coverage">包含 112 条材质节点速查、12 个分类。内容根据 Blender 官方手册整理，改写文字遵循 CC BY-SA 4.0；各条目附原文链接。</p>}
         </section>
         </>}
 
         <footer className="site-footer">
           <span>© 2026 王恩涛 / {activeTool ? '扩展工具' : '视效知识库'}</span>
-          <span>{activeTool ? '本地纹理通道合并与拆分工具' : 'AE 与 Blender 制作经验索引'}</span>
-          {activeTool ? <button className="footer-tool-link" type="button" onClick={() => setActiveTool(null)}>返回知识库 <ArrowUpRight size={14} /></button> : <a href={activePlatform === 'blender' ? blenderHome : notionHome} target="_blank" rel="noreferrer">NOTION <ArrowUpRight size={14} /></a>}
+          <span>{activeTool ? '本地纹理通道合并与拆分工具' : 'AE / Blender / UE 制作经验索引'}</span>
+          {activeTool ? <button className="footer-tool-link" type="button" onClick={() => setActiveTool(null)}>返回知识库 <ArrowUpRight size={14} /></button> : <a href={sourceForPlatform(activePlatform).url} target="_blank" rel="noreferrer">{sourceForPlatform(activePlatform).label} <ArrowUpRight size={14} /></a>}
         </footer>
       </main>
 
-      <DetailDrawer entry={selectedEntry} onClose={() => setSelectedEntry(null)} onImageOpen={(image, alt) => setLightbox({ image, alt })} />
+      <DetailDrawer entry={selectedEntry} onClose={() => setSelectedEntry(null)} onImageOpen={(image, alt) => setLightbox({ image, alt })} savedNodes={savedNodes} onToggleSaved={toggleSaved} onRelated={(name) => setSelectedEntry(allEntries.find((entry) => entry.platform === 'ue' && entry.title === name))} />
       <ImageLightbox image={lightbox?.image} alt={lightbox?.alt} onClose={() => setLightbox(null)} />
     </div>
   )

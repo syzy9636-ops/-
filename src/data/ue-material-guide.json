@@ -1,0 +1,1997 @@
+{
+  "version": "5.6",
+  "groups": [
+    {
+      "id": "basic",
+      "name": "数值与参数",
+      "nodes": [
+        {
+          "name": "Constant",
+          "chinese": "单个数值",
+          "purpose": "输出一个固定数字，用来控制强弱、大小或比例。",
+          "example": "0.6 → Roughness：表面比较粗糙。",
+          "caution": "快捷创建：按住 1，再左键点击。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#constant",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Constant2Vector",
+          "chinese": "两个数值",
+          "purpose": "一起输出两个数字，常用来表示 UV 的横、纵方向。",
+          "example": "(2, 4) × UV：横向重复 2 次，纵向重复 4 次。",
+          "caution": "快捷创建：按住 2，再左键点击。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#constant2vector",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Constant3Vector",
+          "chinese": "三个数值／颜色",
+          "purpose": "输出三个数字，通常用来指定 RGB 颜色，也可以表示 XYZ。",
+          "example": "选择红色 → Base Color：物体变红。",
+          "caution": "快捷创建：按住 3，再左键点击；数值不一定只能是 0～1。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#constant3vector",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Constant4Vector",
+          "chinese": "四个数值",
+          "purpose": "存放 RGBA 或其他四个数值。",
+          "example": "RGB 接颜色，A 接透明度。",
+          "caution": "A 不会自动让材质透明，必须连接并设置合适的混合模式。快捷创建：4＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#constant4vector",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Time",
+          "chinese": "时间",
+          "purpose": "输出不断增长的时间，让材质随时间变化。",
+          "example": "Time → Sine：亮度周期变化。",
+          "caution": "可设置是否忽略暂停，以及循环周期。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#time",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "VertexColor",
+          "chinese": "顶点颜色",
+          "purpose": "读取模型顶点上保存或绘制的颜色。",
+          "example": "用 R 通道当 Lerp 的 Alpha，刷出泥土。",
+          "caution": "模型需要有顶点颜色；精细程度受顶点数量影响。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#vertexcolor",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "PerInstanceRandom",
+          "chinese": "每个实例的随机数",
+          "purpose": "给实例化网格的每个实例一个稳定的随机值。",
+          "example": "随机值混合两种颜色，让草叶颜色不同。",
+          "caution": "用于实例化静态网格或植被，普通独立 Actor 不一定提供这项数据。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#perinstancerandom",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ViewProperty",
+          "chinese": "视图属性",
+          "purpose": "读取所选的视图数据，例如视场角或视图尺寸。",
+          "example": "用视图尺寸相关数据控制屏幕效果。",
+          "caution": "在节点属性里选择要读取的项目；不同项目输出类型不同。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#viewproperty",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ScalarParameter",
+          "chinese": "可调数字",
+          "purpose": "输出能在材质实例中修改的单个数值。",
+          "example": "命名 Roughness，实例里调整粗糙度。",
+          "caution": "补充节点。默认值只是起点，实例可以覆盖。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": true
+        },
+        {
+          "name": "VectorParameter",
+          "chinese": "可调颜色／向量",
+          "purpose": "输出能在材质实例中修改的颜色或向量。",
+          "example": "命名 Tint，与贴图相乘后控制整体颜色。",
+          "caution": "补充节点。很适合白盒场景按功能变色。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": true
+        },
+        {
+          "name": "StaticBoolParameter",
+          "chinese": "静态布尔参数",
+          "purpose": "提供编译时确定的真／假选项。",
+          "example": "连接 StaticSwitch，决定是否启用某个效果。",
+          "caution": "补充节点。单独的布尔参数不负责混合颜色。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": false
+        },
+        {
+          "name": "StaticSwitchParameter",
+          "chinese": "静态开关参数",
+          "purpose": "按实例中的开关选择 A 或 B 这一条材质分支。",
+          "example": "勾选 UseGrid 时使用网格纹理。",
+          "caution": "补充节点。改变开关可能编译新的着色器变体，不能作为连续动画。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": true
+        },
+        {
+          "name": "StaticComponentMaskParameter",
+          "chinese": "可调通道选择",
+          "purpose": "在材质实例里静态选择 R、G、B、A 通道。",
+          "example": "从打包贴图里选择粗糙度通道。",
+          "caution": "补充节点。通道组合在编译时确定。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": false
+        },
+        {
+          "name": "CollectionParameter",
+          "chinese": "全局参数",
+          "purpose": "读取材质参数集合，让多份材质共享同一个数值或颜色。",
+          "example": "全场景共享 Wetness，统一提高湿润感。",
+          "caution": "补充节点。先创建 Material Parameter Collection，再选其中的参数。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": false
+        },
+        {
+          "name": "DynamicParameter",
+          "chinese": "粒子动态参数",
+          "purpose": "读取粒子系统传给材质的最多四路控制值。",
+          "example": "粒子系统传入溶解进度，材质按进度消失。",
+          "caution": "官方总目录收录。Niagara 通常需要设置对应的动态材质参数绑定。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/particle-material-expressions-in-unreal-engine?application_version=5.6#dynamicparameter",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "color",
+      "name": "颜色与混合",
+      "nodes": [
+        {
+          "name": "Add",
+          "chinese": "相加",
+          "purpose": "把两份数值或颜色加在一起。",
+          "example": "贴图 + 0.1：整体抬亮。",
+          "caution": "不是自动的图层混合，结果可以超过 1。快捷：A＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#add",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Subtract",
+          "chinese": "相减",
+          "purpose": "从 A 中减去 B。",
+          "example": "灰度贴图 - 0.3：压低亮度或移动阈值。",
+          "caution": "结果可以是负数。快捷：S＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#subtract",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Multiply",
+          "chinese": "相乘",
+          "purpose": "把两份数值逐通道相乘，用来调强度、染色或叠加遮罩。",
+          "example": "贴图 RGB × Tint → Base Color。",
+          "caution": "乘 0 为 0，乘 1 保持原值。快捷：M＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#multiply",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Divide",
+          "chinese": "相除",
+          "purpose": "用 A 除以 B，常用来缩小数值或调整比例。",
+          "example": "WorldPosition ÷ 100：把 100 厘米作为一个单位。",
+          "caution": "避免除以 0。快捷：D＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#divide",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "LinearInterpolate",
+          "chinese": "按比例混合",
+          "purpose": "根据 Alpha 在 A 和 B 之间混合；简称 Lerp。",
+          "example": "A 红、B 蓝、Alpha 0.5：得到中间颜色。",
+          "caution": "Alpha 为 0 选 A，为 1 选 B；多通道 Alpha 会分别混合。快捷：L＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#linearinterpolate",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Desaturation",
+          "chinese": "去色／变灰",
+          "purpose": "降低颜色的鲜艳程度，直到变成灰度。",
+          "example": "Fraction 0 保持原色，1 完全灰色。",
+          "caution": "不是单纯降低亮度；各通道按亮度权重转换。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/color-material-expressions-in-unreal-engine?application_version=5.6#desaturation",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "OneMinus",
+          "chinese": "反相",
+          "purpose": "计算 1 减去输入，让黑白或遮罩范围翻转。",
+          "example": "白色遮罩变黑，黑色变白。",
+          "caution": "输入在 0～1 时最直观，超过这个范围会得到负值等结果。快捷：O＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#oneminus",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Power",
+          "chinese": "幂／调曲线",
+          "purpose": "把输入按指数重新分布，常用于调整灰度对比。",
+          "example": "0～1 的灰度输入，指数 2：中间灰变暗。",
+          "caution": "指数大于 1 压暗 0～1 的中间值；不是简单乘法。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#power",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Clamp",
+          "chinese": "限制范围",
+          "purpose": "把结果限制在指定的最小值和最大值之间。",
+          "example": "限制在 0.2～0.8，避免效果过强或过弱。",
+          "caution": "超过上限取上限，低于下限取下限。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#clamp",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Saturate",
+          "chinese": "限制到零至一",
+          "purpose": "把所有值限制在 0～1。",
+          "example": "处理遮罩，防止混合比例超出范围。",
+          "caution": "相当于最小值 0、最大值 1 的 Clamp。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#saturate",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Min",
+          "chinese": "取较小值",
+          "purpose": "逐通道比较两份输入，保留较小的值。",
+          "example": "两个黑白遮罩取 Min，保留共同的白色部分。",
+          "caution": "遮罩的交集解释只适用于相应的 0～1 遮罩。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#min",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Max",
+          "chinese": "取较大值",
+          "purpose": "逐通道比较两份输入，保留较大的值。",
+          "example": "两个遮罩取 Max，让任意一处白色都保留。",
+          "caution": "常用于合并遮罩。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#max",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "texture",
+      "name": "贴图与采样",
+      "nodes": [
+        {
+          "name": "TextureSample",
+          "chinese": "读取贴图",
+          "purpose": "在指定 UV 位置读取贴图的颜色或数据。",
+          "example": "RGB → Base Color，法线贴图 → Normal。",
+          "caution": "官方总目录收录。法线、颜色、数据贴图需要匹配采样类型。快捷：T＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/texture-material-expressions-in-unreal-engine?application_version=5.6#texturesample",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": true
+        },
+        {
+          "name": "TextureObject",
+          "chinese": "贴图资源",
+          "purpose": "传递一张贴图资源，供其他节点或材质函数读取。",
+          "example": "TextureObject → WorldAlignedTexture 的纹理输入。",
+          "caution": "官方总目录收录。它不是采样结果，不能直接当颜色连接。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/texture-material-expressions-in-unreal-engine?application_version=5.6#textureobject",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        },
+        {
+          "name": "TextureSampleParameter2D",
+          "chinese": "可替换二维贴图",
+          "purpose": "读取二维贴图，并允许在材质实例中更换它。",
+          "example": "实例中把砖墙图换成水泥图。",
+          "caution": "补充节点。需要参数名；采样类型应与贴图一致。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": true
+        },
+        {
+          "name": "TextureObjectParameter",
+          "chinese": "可替换贴图资源",
+          "purpose": "把贴图资源做成可在实例中替换的参数。",
+          "example": "让世界对齐贴图函数使用不同的纹理。",
+          "caution": "补充节点。仍需要采样节点或函数来读取内容。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": false
+        },
+        {
+          "name": "TextureSampleParameterCube",
+          "chinese": "可替换立方体贴图",
+          "purpose": "读取立方体贴图，并可在实例里替换。",
+          "example": "ReflectionVectorWS 作为方向，读取环境贴图。",
+          "caution": "补充节点。输入通常是三维方向，不是二维 UV。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-parameter-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方参数表达式参考"
+          },
+          "common": false
+        },
+        {
+          "name": "TextureProperty",
+          "chinese": "贴图属性",
+          "purpose": "读取选定贴图的尺寸或单个像素的大小。",
+          "example": "使用 Texel Size，把 UV 偏移一个像素。",
+          "caution": "补充节点。输入为贴图资源，属性在节点设置中选择。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/texture-material-expressions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：纹理表达式参考"
+          },
+          "common": false
+        },
+        {
+          "name": "FontSample",
+          "chinese": "读取字体贴图",
+          "purpose": "读取字体资源中的某一页字符贴图。",
+          "example": "把字体图集中的图案用于材质。",
+          "caution": "官方总目录收录。它不会自动排版文字。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/font-material-expressions-in-unreal-engine?application_version=5.6#fontsample",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        },
+        {
+          "name": "FontSampleParameter",
+          "chinese": "可替换字体贴图",
+          "purpose": "像 FontSample 一样读取字体，但可在材质实例中换字体参数。",
+          "example": "不同实例使用不同字体图集。",
+          "caution": "官方总目录收录。不是 Text Render 的文字内容参数。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/font-material-expressions-in-unreal-engine?application_version=5.6#fontsampleparameter",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        },
+        {
+          "name": "SceneColor",
+          "chinese": "场景颜色",
+          "purpose": "读取场景已有的颜色，用于特定的屏幕效果。",
+          "example": "在支持的材质域中对背景颜色做处理。",
+          "caution": "官方总目录收录。后处理常用 SceneTexture 的 PostProcessInput0；两者不要混用。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/texture-material-expressions-in-unreal-engine?application_version=5.6#scenecolor",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        },
+        {
+          "name": "SceneTexture",
+          "chinese": "场景纹理",
+          "purpose": "读取渲染过程里的指定缓冲区，例如深度或后处理输入。",
+          "example": "后处理使用 PostProcessInput0 做颜色调整。",
+          "caution": "补充节点。可用项目受材质域、渲染路径和阶段限制。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/post-process-materials-in-unreal-engine?application_version=5.6",
+            "basis": "补充：后处理材质参考"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "uv",
+      "name": "UV 与坐标",
+      "nodes": [
+        {
+          "name": "TextureCoordinate",
+          "chinese": "贴图坐标",
+          "purpose": "读取模型的 UV，并控制横、纵平铺次数；常简称 TexCoord。",
+          "example": "UTiling 和 VTiling 都设 4：每个方向重复 4 次。",
+          "caution": "默认读取 UV 通道 0；模型需要相应 UV。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#texturecoordinate",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Panner",
+          "chinese": "UV 平移",
+          "purpose": "让 UV 按速度随时间移动，产生贴图流动。",
+          "example": "Speed X 0.1：水面或传送带贴图横向移动。",
+          "caution": "它移动的是采样坐标，模型本身不会移动。快捷：P＋左键。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#panner",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Rotator",
+          "chinese": "UV 旋转",
+          "purpose": "围绕二维中心旋转 UV，让贴图转起来。",
+          "example": "中心设 0.5、0.5，做旋转图案。",
+          "caution": "改变旋转时间或速度控制角度；不是旋转模型。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#rotator",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "WorldPosition",
+          "chinese": "世界位置",
+          "purpose": "读取当前表面位置在场景里的 XYZ 坐标。",
+          "example": "取 Z 做从低到高的颜色渐变。",
+          "caution": "通常以厘米为单位；属性里可选择包含或排除材质位移。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#worldposition",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "ActorPositionWS",
+          "chinese": "Actor 世界位置",
+          "purpose": "读取物体所属 Actor 在世界里的位置。",
+          "example": "按 Actor 高度，让不同物体呈现不同颜色。",
+          "caution": "同一 Actor 的材质像素使用同一位置，不是每个像素的表面位置。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#actorpositionws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ObjectPositionWS",
+          "chinese": "物体中心世界位置",
+          "purpose": "读取物体包围盒中心的世界坐标。",
+          "example": "WorldPosition 减它，得到相对物体中心的位置。",
+          "caution": "包围盒中心不一定等于模型枢轴。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#objectpositionws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "CameraPositionWS",
+          "chinese": "相机世界位置",
+          "purpose": "读取当前观察相机的 XYZ 世界坐标。",
+          "example": "和 WorldPosition 求 Distance，得到表面到相机的距离。",
+          "caution": "读取当前视图相机，不是指定的场景摄像机对象。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#camerapositionws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ObjectOrientation",
+          "chinese": "物体朝上方向",
+          "purpose": "读取物体局部 Z 轴在世界空间中的方向。",
+          "example": "判断物体是否倾斜，再改变颜色。",
+          "caution": "输出方向向量，不是欧拉旋转角。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#objectorientation",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ObjectRadius",
+          "chinese": "物体半径",
+          "purpose": "读取物体包围球的半径。",
+          "example": "按物体大小调整纹理或效果范围。",
+          "caution": "会受物体缩放影响，不是精确的网格几何半径。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#objectradius",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ObjectBounds",
+          "chinese": "物体包围盒尺寸",
+          "purpose": "读取物体包围盒沿各轴的尺寸数据。",
+          "example": "按对象的大小控制程序化图案比例。",
+          "caution": "包围盒不是物体表面的精确轮廓。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-material-expressions-in-unreal-engine?application_version=5.6#objectbounds",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "LightmapUVs",
+          "chinese": "光照贴图 UV",
+          "purpose": "读取用于静态光照贴图的 UV 坐标。",
+          "example": "检查模型的光照贴图展开。",
+          "caution": "没有对应数据时可能返回零值；它与普通贴图 UV 用途不同。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#lightmapuvs",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ScreenPosition",
+          "chinese": "屏幕位置",
+          "purpose": "读取像素在屏幕上的位置，用于屏幕空间效果。",
+          "example": "用屏幕横坐标做从左到右的遮罩。",
+          "caution": "注意 ViewportUV 与其他映射模式的区别。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#screenposition",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "SceneTexelSize",
+          "chinese": "场景像素大小",
+          "purpose": "读取场景纹理中一个像素对应的 UV 步长。",
+          "example": "给屏幕 UV 偏移一个像素，做边缘检测。",
+          "caution": "用于分辨率相关效果，场景纹理大小可能不同于视口大小。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#scenetexelsize",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ViewSize",
+          "chinese": "视图尺寸",
+          "purpose": "读取当前视图的宽度和高度，单位是像素。",
+          "example": "把像素距离换算为相对屏幕的比例。",
+          "caution": "输出两个数值，不是世界单位。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#viewsize",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "PreSkinnedLocalPosition",
+          "chinese": "蒙皮前局部位置",
+          "purpose": "读取骨骼变形前的模型局部位置，也可用于静态网格。",
+          "example": "给动画角色做固定在原始模型上的程序化纹理。",
+          "caution": "用于减少动画导致的纹理漂移；名称在界面可能带空格。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-material-expressions-in-unreal-engine?application_version=5.6#pre-skinnedlocalposition",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "mask",
+      "name": "遮罩、深度与透明",
+      "nodes": [
+        {
+          "name": "Step",
+          "chinese": "硬边阈值",
+          "purpose": "输入 X 小于 Y 时输出 0，大于或等于 Y 时输出 1。",
+          "example": "灰度图 X、阈值 Y 0.5：变成黑白遮罩。",
+          "caution": "没有灰色过渡，适合硬边。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#step",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "SmoothStep",
+          "chinese": "柔边阈值",
+          "purpose": "低于 Min 输出 0，高于 Max 输出 1，中间平滑过渡。",
+          "example": "Min 0.4、Max 0.6：形成柔和的黑白分界。",
+          "caution": "Min 和 Max 的间距越小，边缘越硬。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#smoothstep",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "If",
+          "chinese": "条件选择",
+          "purpose": "比较 A 和 B，根据大于、等于、小于选择对应输入。",
+          "example": "高度超过阈值用雪颜色，否则用岩石颜色。",
+          "caution": "A、B 是单个数值；不是蓝图执行分支，也不保证省掉未选分支的计算。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#if",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "SphereMask",
+          "chinese": "球形范围遮罩",
+          "purpose": "根据两点距离生成圆形或球形的软硬范围遮罩。",
+          "example": "A 为 WorldPosition、B 为指定中心：画出局部影响范围。",
+          "caution": "Radius 控制范围，Hardness 控制边缘；三维输入得到球形范围。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#sphere-mask",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "AntialiasedTextureMask",
+          "chinese": "抗锯齿贴图遮罩",
+          "purpose": "把指定贴图通道按阈值变成遮罩，并平滑细小边缘。",
+          "example": "让细线或标志的边缘更稳定。",
+          "caution": "仍受贴图分辨率、压缩和过滤影响。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#antialiasedtexturemask",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DepthFade",
+          "chinese": "交界处淡出",
+          "purpose": "按透明表面与背后场景的深度差，让交界处渐隐。",
+          "example": "烟雾平面穿过地面时，让交界变柔。",
+          "caution": "通常用于透明材质；FadeDistance 是淡出距离。它不是相机距离淡出。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/depth-material-expressions-in-unreal-engine?application_version=5.6#depthfade",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "PixelDepth",
+          "chinese": "当前像素深度",
+          "purpose": "读取当前表面像素到相机的深度距离。",
+          "example": "远处使用一种颜色，近处使用另一种。",
+          "caution": "不是两个物体之间的距离。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/depth-material-expressions-in-unreal-engine?application_version=5.6#pixeldepth",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "SceneDepth",
+          "chinese": "背景场景深度",
+          "purpose": "按屏幕 UV 读取场景深度，包括当前透明表面后面的不透明物体。",
+          "example": "比较背景深度与自身深度，判断交界。",
+          "caution": "按该参考页，SceneDepth 表达式用于透明材质；后处理深度可用 SceneTexture。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/depth-material-expressions-in-unreal-engine?application_version=5.6#scenedepth",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DistanceCullFade",
+          "chinese": "距离剔除淡入",
+          "purpose": "读取与距离剔除相关的渐变值，让对象进入可见范围时柔和显现。",
+          "example": "接到淡入相关的遮罩，减轻远处物体突然出现。",
+          "caution": "需要相应剔除设置；本节点主要提供淡入，不能理解为通用双向淡出。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#distancecullfade",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "PerInstanceFadeAmount",
+          "chinese": "实例距离淡出",
+          "purpose": "读取实例化网格按剔除距离产生的 0～1 淡出值。",
+          "example": "植被遮罩乘这个值，远处草逐渐消失。",
+          "caution": "需要设置实例或植被的起止剔除距离，并用于实例化网格。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#perinstancefadeamount",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "TwoSidedSign",
+          "chinese": "正反面标记",
+          "purpose": "正面输出 1，背面输出 -1。",
+          "example": "用于双面材质区分正反面，或按需求修正法线。",
+          "caution": "需要 Two Sided；不应无条件把所有法线都乘它。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#twosidedsign",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ThinTranslucentMaterialOutput",
+          "chinese": "薄层透明输出",
+          "purpose": "设置薄层透明材质的透射颜色，制作有色玻璃等效果。",
+          "example": "设置带色的透射，让背景透过玻璃时染色。",
+          "caution": "需 Translucent、Thin Translucent 着色模型和 Surface ForwardShading。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#thin-translucent",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "normal",
+      "name": "法线、方向与反射",
+      "nodes": [
+        {
+          "name": "PixelNormalWS",
+          "chinese": "像素世界法线",
+          "purpose": "读取当前像素在世界空间里的法线方向，通常包含法线贴图影响。",
+          "example": "用朝上的程度控制积雪覆盖。",
+          "caution": "涉及法线自身的计算时要避免循环依赖。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#pixelnormalws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "VertexNormalWS",
+          "chinese": "顶点世界法线",
+          "purpose": "读取模型顶点在世界空间里的法线方向。",
+          "example": "法线 × 强度 → World Position Offset：向外膨胀。",
+          "caution": "用于顶点阶段；沿分离顶点移动可能产生裂缝。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#vertexnormalws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "VertexTangentWS",
+          "chinese": "顶点世界切线",
+          "purpose": "读取顶点表面切线在世界空间里的方向。",
+          "example": "沿表面切线方向偏移顶点。",
+          "caution": "方向来自模型切线数据，不是表面法线。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#vertextangentws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "PreSkinnedLocalNormal",
+          "chinese": "蒙皮前局部法线",
+          "purpose": "读取骨骼变形前的局部法线。",
+          "example": "按角色原始表面方向生成固定的材质效果。",
+          "caution": "与动画变形后的世界法线不同。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-material-expressions-in-unreal-engine?application_version=5.6#pre-skinnedlocalnormal",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "CameraVectorWS",
+          "chinese": "朝向相机的方向",
+          "purpose": "输出当前表面指向相机的世界方向。",
+          "example": "用方向采样环境贴图或做观察角度效果。",
+          "caution": "输出方向，不是相机位置。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-material-expressions-in-unreal-engine?application_version=5.6#cameravectorws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ReflectionVectorWS",
+          "chinese": "世界反射方向",
+          "purpose": "根据观察方向和表面法线得到反射方向。",
+          "example": "用它采样立方体环境贴图。",
+          "caution": "它只提供方向，不会自动创建真实场景反射。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-material-expressions-in-unreal-engine?application_version=5.6#reflectionvectorws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "LightVector",
+          "chinese": "灯光／贴花相关向量",
+          "purpose": "在灯光函数或延迟贴花材质中，读取对应空间的方向或位置数据。",
+          "example": "灯光函数使用它制作有方向的光照图案。",
+          "caution": "普通表面材质不能用它读取任意灯光方向。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-material-expressions-in-unreal-engine?application_version=5.6#lightvector",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Normalize",
+          "chinese": "方向归一化",
+          "purpose": "把向量长度变为 1，保留方向。",
+          "example": "(3, 0, 0) 变成 (1, 0, 0)。",
+          "caution": "它不是把每个通道限制到 0～1；零向量没有有效方向。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#normalize",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DotProduct",
+          "chinese": "点积／比较方向",
+          "purpose": "把对应分量相乘再相加；单位方向输入时，可判断朝向是否相近。",
+          "example": "法线与向上方向点积，筛选朝上的表面。",
+          "caution": "单位向量结果：同向 1、垂直 0、反向 -1。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#dotproduct",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "CrossProduct",
+          "chinese": "叉积／求垂直方向",
+          "purpose": "从两个三维向量求出与它们都垂直的向量。",
+          "example": "由法线和切线求另一条垂直方向。",
+          "caution": "输入顺序反过来，结果方向也反过来。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#crossproduct",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DeriveNormalZ",
+          "chinese": "补出法线 Z",
+          "purpose": "根据法线 X、Y 分量重建正向 Z 分量。",
+          "example": "只保存法线的 RG，再补出 B。",
+          "caution": "假定单位法线且取正 Z；XY 必须处在合理范围内。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-operation-material-expressions-in-unreal-engine?application_version=5.6#derivenormalz",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Transform",
+          "chinese": "转换方向空间",
+          "purpose": "把方向向量从一种坐标空间转换到另一种空间。",
+          "example": "切线空间法线 → 世界空间方向。",
+          "caution": "用于向量或方向，转换位置应使用 TransformPosition。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-operation-material-expressions-in-unreal-engine?application_version=5.6#transform",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "TransformPosition",
+          "chinese": "转换位置空间",
+          "purpose": "把位置从一种坐标空间转换到另一种空间。",
+          "example": "把局部位置转换成世界位置。",
+          "caution": "位置会涉及平移；不要拿它代替方向转换。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/vector-operation-material-expressions-in-unreal-engine?application_version=5.6#transformposition",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "math",
+      "name": "数学与通道",
+      "nodes": [
+        {
+          "name": "Abs",
+          "chinese": "绝对值",
+          "purpose": "去掉负号，让数值变成非负。",
+          "example": "-0.5 → 0.5。",
+          "caution": "常用于制作对称图案。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#abs",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "AppendVector",
+          "chinese": "拼接通道",
+          "purpose": "把多个数值按顺序拼成更长的向量。",
+          "example": "U 和 V 两个数字拼成 UV。",
+          "caution": "不是相加；RGB 再拼 A 得到四通道。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#appendvector",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ComponentMask",
+          "chinese": "提取通道",
+          "purpose": "只保留选定的 R、G、B、A 通道。",
+          "example": "从 ORM 贴图中取 G 作为粗糙度。",
+          "caution": "通道含义由贴图打包方式决定；节点不会自动知道哪个是粗糙度。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#componentmask",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Ceil",
+          "chinese": "向上取整",
+          "purpose": "取大于或等于输入的最近整数。",
+          "example": "1.2 → 2；-1.2 → -1。",
+          "caution": "有跳变，不适合需要连续变化的效果。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#ceil",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Floor",
+          "chinese": "向下取整",
+          "purpose": "取小于或等于输入的最近整数。",
+          "example": "1.8 → 1；-1.2 → -2。",
+          "caution": "常用于把坐标分成一个个格子。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#floor",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Round",
+          "chinese": "四舍五入取整",
+          "purpose": "把数值取到最近的整数。",
+          "example": "1.2 → 1；1.8 → 2。",
+          "caution": "正好半整数处的规则不要用来依赖精确的分类逻辑。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#round",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Truncate",
+          "chinese": "去掉小数",
+          "purpose": "保留整数部分，向 0 的方向取整。",
+          "example": "1.8 → 1；-1.8 → -1。",
+          "caution": "负数情况下与 Floor 不同。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#truncate",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Frac",
+          "chinese": "只取小数",
+          "purpose": "计算输入减去向下取整的结果，输出 0～1 内的循环小数。",
+          "example": "1.3 → 0.3；-0.2 → 0.8。",
+          "caution": "常用于让渐变反复循环，边界存在跳变。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#frac",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Fmod",
+          "chinese": "除法取余",
+          "purpose": "计算 A 除以 B 的余数。",
+          "example": "5 除以 2 的余数为 1。",
+          "caution": "负数余数可能为负；B 不应为 0。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#fmod",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Sign",
+          "chinese": "正负号",
+          "purpose": "正数变 1，零为 0，负数变 -1。",
+          "example": "-7 → -1；7 → 1。",
+          "caution": "它只保留正负关系，不保留大小。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#sign",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "SquareRoot",
+          "chinese": "平方根",
+          "purpose": "求一个非负数的平方根。",
+          "example": "9 → 3。",
+          "caution": "避免负数输入。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#squareroot",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Logarithm2",
+          "chinese": "以二为底的对数",
+          "purpose": "求 2 的几次方能得到输入。",
+          "example": "8 → 3，因为 2³ = 8。",
+          "caution": "输入必须大于 0。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#logarithm2",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Logarithm10",
+          "chinese": "以十为底的对数",
+          "purpose": "求 10 的几次方能得到输入。",
+          "example": "100 → 2。",
+          "caution": "输入必须大于 0。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#logarithm10",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Sine",
+          "chinese": "正弦波",
+          "purpose": "把变化的输入变成平滑起伏的 -1～1 波形。",
+          "example": "Time → Sine → 重映射到 0～1：灯光呼吸。",
+          "caution": "材质节点默认周期为 1，与直接输入弧度的函数不同。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#sine",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Cosine",
+          "chinese": "余弦波",
+          "purpose": "生成类似正弦但起点不同的周期波形。",
+          "example": "与 Sine 搭配生成圆周运动。",
+          "caution": "材质节点周期由 Period 控制，默认 1。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#cosine",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Tangent",
+          "chinese": "正切",
+          "purpose": "计算弧度角的正切。",
+          "example": "用于角度与斜率之间的转换。",
+          "caution": "某些角度附近结果非常大；不是平滑有限范围的波形。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#tangent",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Arcsine",
+          "chinese": "反正弦",
+          "purpose": "从正弦值反求角度，输出弧度。",
+          "example": "0 → 0；1 → π/2。",
+          "caution": "输入应在 -1～1，计算成本比简单运算高。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#arcsine",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ArcsineFast",
+          "chinese": "快速反正弦",
+          "purpose": "用近似方法更快地计算反正弦。",
+          "example": "用于允许小误差的角度效果。",
+          "caution": "输入 -1～1；精度低于 Arcsine。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#arcsinefast",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Arccosine",
+          "chinese": "反余弦",
+          "purpose": "从余弦值反求角度，输出弧度。",
+          "example": "两个单位方向点积，再反余弦求夹角。",
+          "caution": "输入应在 -1～1；计算相对昂贵。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#arccosine",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ArccosineFast",
+          "chinese": "快速反余弦",
+          "purpose": "近似计算反余弦，减少计算成本。",
+          "example": "用近似夹角控制材质渐变。",
+          "caution": "用精度换速度，输入应在 -1～1。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#arccosinefast",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Arctangent",
+          "chinese": "反正切",
+          "purpose": "从一个正切值反求角度，输出弧度。",
+          "example": "把斜率转成角度。",
+          "caution": "仅一个输入，不能完整区分四个象限。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#arctangent",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ArctangentFast",
+          "chinese": "快速反正切",
+          "purpose": "近似计算反正切。",
+          "example": "精度要求不高的程序化角度效果。",
+          "caution": "比标准版本误差更大。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#arctangentfast",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Arctangent2",
+          "chinese": "双输入反正切",
+          "purpose": "利用 X、Y 两个分量求方向角，可以区分象限。",
+          "example": "把二维坐标转成围绕中心的角度。",
+          "caution": "输出弧度；X、Y 的输入顺序会影响方向。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#arctangent2",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Arctangent2Fast",
+          "chinese": "快速双输入反正切",
+          "purpose": "近似计算两个分量对应的方向角。",
+          "example": "做允许小误差的圆形图案。",
+          "caution": "精度低于 Arctangent2。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/math-material-expressions-in-unreal-engine?application_version=5.6#arctangent2fast",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Distance",
+          "chinese": "两点距离",
+          "purpose": "计算两个位置或向量之间的直线距离。",
+          "example": "相机位置与 WorldPosition 求距离，控制远近效果。",
+          "caution": "世界位置以厘米输入时，结果也是厘米。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#distance",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ConstantBiasScale",
+          "chinese": "偏移后缩放",
+          "purpose": "先加 Bias，再乘 Scale。",
+          "example": "Bias 1、Scale 0.5：把 -1～1 变成 0～1。",
+          "caution": "公式是 (输入 + Bias) × Scale，运算顺序固定。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#constant-bias-scale",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "effect",
+      "name": "程序纹理与表面效果",
+      "nodes": [
+        {
+          "name": "Fresnel",
+          "chinese": "边缘／掠射角效果",
+          "purpose": "根据表面法线与观察方向，让正对相机处较弱、侧边较强。",
+          "example": "给物体边缘混入亮色，做边缘光。",
+          "caution": "它是计算观察角度的遮罩；不等于自动实现完整的物理反射。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#fresnel",
+            "basis": "官方分类正文"
+          },
+          "common": true
+        },
+        {
+          "name": "Noise",
+          "chinese": "噪声",
+          "purpose": "按坐标生成不规则的单值图案。",
+          "example": "噪声作为溶解遮罩或云状颜色变化。",
+          "caution": "类型、质量和层数影响性能；复杂效果可考虑烘焙成贴图。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#noise",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "VectorNoise",
+          "chinese": "向量噪声",
+          "purpose": "生成多通道程序化噪声，包括颜色、梯度或旋转方向等。",
+          "example": "用 Curl Noise 扭曲坐标，做旋涡流动。",
+          "caution": "不同模式输出含义不同；部分模式成本较高。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#vector-noise",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "BumpOffset",
+          "chinese": "视差贴图偏移",
+          "purpose": "根据高度图和视角偏移 UV，让平面看起来有浅浮雕。",
+          "example": "砖缝高度图控制纹理偏移。",
+          "caution": "不增加真实几何，不会改变轮廓；过大会出现拉伸。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#bump-offset",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "BlackBody",
+          "chinese": "色温转颜色",
+          "purpose": "把开尔文色温转成对应的光色。",
+          "example": "较低色温偏暖，高色温逐渐偏白、偏蓝。",
+          "caution": "它提供颜色数据，不会自动创建灯光或照亮场景。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#black-body",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "RotateAboutAxis",
+          "chinese": "绕轴旋转偏移",
+          "purpose": "计算一个位置绕指定轴旋转后产生的位移。",
+          "example": "输出接 World Position Offset，让顶点围绕轴旋转。",
+          "caution": "输出是位移量，不是直接的新位置；角度 1 表示完整一圈。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#rotateaboutaxis",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DDX",
+          "chinese": "屏幕横向变化量",
+          "purpose": "估算输入在屏幕横方向相邻像素间的变化。",
+          "example": "配合 DDY 估计图案边缘或过滤范围。",
+          "caution": "像素着色阶段使用，不是世界空间的 X 方向导数。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#ddx",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DDY",
+          "chinese": "屏幕纵向变化量",
+          "purpose": "估算输入在屏幕纵方向相邻像素间的变化。",
+          "example": "用坐标变化量帮助细线抗锯齿。",
+          "caution": "像素着色阶段使用，不是世界空间的 Y 方向导数。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#ddy",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DepthOfFieldFunction",
+          "chinese": "景深模糊程度",
+          "purpose": "读取当前景深设置下某处的模糊程度，0 清晰、1 完全模糊。",
+          "example": "景深较强的位置改用更柔和的纹理。",
+          "caution": "它不会开启景深；效果取决于相机或后处理的景深设置。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#depth-of-field-function",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "particle",
+      "name": "粒子效果",
+      "nodes": [
+        {
+          "name": "ParticleColor",
+          "chinese": "粒子颜色",
+          "purpose": "读取粒子系统为每个粒子提供的颜色和透明度。",
+          "example": "RGB 乘贴图后接 Emissive，A 控制透明度。",
+          "caution": "需要粒子系统提供或绑定颜色数据。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#particlecolor",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticleDirection",
+          "chinese": "粒子运动方向",
+          "purpose": "读取单个粒子当前运动的方向。",
+          "example": "按飞行方向改变粒子颜色。",
+          "caution": "方向不是速度大小；可用性取决于粒子渲染器。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#particledirection",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticlePositionWS",
+          "chinese": "粒子世界位置",
+          "purpose": "读取当前粒子在世界空间里的位置。",
+          "example": "粒子高度不同，呈现不同颜色。",
+          "caution": "不是整个粒子发射器的位置。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/coordinates-material-expressions-in-unreal-engine?application_version=5.6#particlepositionws",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticleRadius",
+          "chinese": "粒子半径",
+          "purpose": "读取单个粒子的半径。",
+          "example": "粒子越大，颜色越偏红。",
+          "caution": "使用前确认渲染器提供这项数据。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#particleradius",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticleRelativeTime",
+          "chinese": "粒子生命进度",
+          "purpose": "读取粒子从出生到死亡的进度：0 出生，1 临近死亡。",
+          "example": "作为 Lerp 的 Alpha，让粒子随生命变色。",
+          "caution": "不是已经经过的秒数。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#particlerelativetime",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticleSize",
+          "chinese": "粒子尺寸",
+          "purpose": "读取粒子精灵的 X、Y 尺寸。",
+          "example": "用 Y 控制亮度，让拉长的粒子更亮。",
+          "caution": "通常是两个分量，不是统一的半径。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#particlesize",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticleSpeed",
+          "chinese": "粒子速度大小",
+          "purpose": "读取粒子每秒移动的速度数值。",
+          "example": "速度越快，发光越强。",
+          "caution": "世界单位通常是厘米；可用性取决于渲染器和绑定。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#particlespeed",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticleMotionBlurFade",
+          "chinese": "粒子运动模糊淡化",
+          "purpose": "读取粒子因运动模糊产生的淡化系数。",
+          "example": "用系数调整快速粒子的透明度。",
+          "caution": "1 表示没有淡化；依赖粒子与运动模糊设置。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#particlemotionblurfade",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticleMacroUV",
+          "chinese": "粒子整体 UV",
+          "purpose": "提供覆盖整个粒子效果范围的 UV，使多个粒子共享大图案。",
+          "example": "给整片爆炸烟雾叠一张大尺度噪声。",
+          "caution": "官方总目录收录。与单个粒子精灵的普通 UV 不同。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/particle-material-expressions-in-unreal-engine?application_version=5.6#particlemacrouv",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        },
+        {
+          "name": "ParticleSubUV",
+          "chinese": "粒子序列帧贴图",
+          "purpose": "按粒子系统的子图设置读取序列帧贴图。",
+          "example": "把一张多格爆炸贴图逐帧播放。",
+          "caution": "官方总目录收录。常见于 Cascade；Niagara 常通过 SubImage 相关设置实现。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/particle-material-expressions-in-unreal-engine?application_version=5.6#particlesubuv",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        },
+        {
+          "name": "TextureSampleParameterSubUV",
+          "chinese": "可替换粒子序列贴图",
+          "purpose": "读取粒子序列帧图集，并让材质实例能替换贴图。",
+          "example": "不同实例换用不同烟雾序列图。",
+          "caution": "官方总目录收录。需要配合粒子系统的序列帧设置。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/particle-material-expressions-in-unreal-engine?application_version=5.6#texturesampleparametersubuv",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        },
+        {
+          "name": "SphericalParticleOpacity",
+          "chinese": "球形粒子透明度",
+          "purpose": "生成球状的柔和透明度，让平面粒子更像体积球。",
+          "example": "做柔边烟团或发光球粒子。",
+          "caution": "官方总目录收录。不增加真实体积几何。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/unreal-engine/particle-material-expressions-in-unreal-engine?application_version=5.6#sphericalparticleopacity",
+            "basis": "官方总目录（该分类正文未取得）"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "landscape",
+      "name": "地形材质",
+      "nodes": [
+        {
+          "name": "LandscapeLayerBlend",
+          "chinese": "地形图层混合",
+          "purpose": "按地形图层权重混合多种材质，可设置权重、透明或高度混合。",
+          "example": "把草、土、岩石混合成地形表面。",
+          "caution": "图层名称要与地形绘制图层匹配；通常要创建对应 Layer Info。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/landscape-material-expressions-in-unreal-engine?application_version=5.6#landscape-layer-blend",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "LandscapeLayerCoords",
+          "chinese": "地形贴图坐标",
+          "purpose": "生成适合地形的 UV，并调节缩放、旋转、平移。",
+          "example": "让草地贴图在大地形上按合适比例重复。",
+          "caution": "Mapping Scale 的用法与 TexCoord 平铺数不同，不要直接等同。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/landscape-material-expressions-in-unreal-engine?application_version=5.6#landscape-layer-coords",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "LandscapeLayerSwitch",
+          "chinese": "地形图层开关",
+          "purpose": "根据某块地形是否使用某图层，选择不同计算分支。",
+          "example": "没用到泥土图层的区域省去相关计算。",
+          "caution": "按地形组件的图层使用情况优化，不是逐像素的颜色混合。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/landscape-material-expressions-in-unreal-engine?application_version=5.6#landscape-layer-switch",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "LandscapeLayerWeight",
+          "chinese": "地形图层权重",
+          "purpose": "读取图层权重，并将 Layer 按权重加到 Base 上。",
+          "example": "用草图层的绘制权重加入草颜色。",
+          "caution": "Base 为 0、Layer 为 1 时可读出该图层权重。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/landscape-material-expressions-in-unreal-engine?application_version=5.6#landscape-layer-weight",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "LandscapeVisibilityMask",
+          "chinese": "地形可见性遮罩",
+          "purpose": "读取地形可见性绘制结果，用于挖出洞口。",
+          "example": "制作地形洞穴入口。",
+          "caution": "需要 Masked 材质并连接 Opacity Mask，或设置合适的地形洞口材质。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/landscape-material-expressions-in-unreal-engine?application_version=5.6#landscape-visibility-mask",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "render",
+      "name": "渲染、距离场与兼容",
+      "nodes": [
+        {
+          "name": "DistanceToNearestSurface",
+          "chinese": "到最近表面的距离",
+          "purpose": "读取全局距离场，取得到最近遮挡表面的有符号距离。",
+          "example": "物体靠近地面时，做接触范围效果。",
+          "caution": "需要 Generate Mesh Distance Fields 等支持；距离场有精度和自采样限制。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#distance-to-nearest-surface",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DistanceFieldGradient",
+          "chinese": "距离场变化方向",
+          "purpose": "读取距离场的空间梯度，用来推算远离或绕过表面的方向。",
+          "example": "让流动纹理绕开障碍物。",
+          "caution": "通常先 Normalize 再当方向使用；需要距离场支持。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#distance-field-gradient",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "FeatureLevelSwitch",
+          "chinese": "图形能力切换",
+          "purpose": "按图形特性等级选择不同材质分支。",
+          "example": "低能力设备用简化效果，高能力设备用完整效果。",
+          "caution": "这是图形特性等级，不是玩家选择的画质档位。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#featurelevelswitch",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "QualitySwitch",
+          "chinese": "材质质量切换",
+          "purpose": "按材质质量等级选择不同计算。",
+          "example": "低画质使用贴图，高画质使用复杂噪声。",
+          "caution": "取决于项目的材质质量设置。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#quality-switch",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "GIReplace",
+          "chinese": "间接光照替换",
+          "purpose": "为间接光照相关计算提供不同的材质输入。",
+          "example": "视觉表面保留细节，间接光照使用较简化的颜色。",
+          "caution": "不同全局光照路径支持不同；不要默认它可以单独控制 Lumen 的所有行为。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#gireplace",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "LightmassReplace",
+          "chinese": "静态烘焙替换",
+          "purpose": "正常渲染使用 Realtime，Lightmass 烘焙时使用 Lightmass 输入。",
+          "example": "烘焙使用更简单或更适合导出的材质表达式。",
+          "caution": "只针对 Lightmass 的相应工作流程，不是 Lumen 切换开关。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#lightmass-replace",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "PrecomputedAOMask",
+          "chinese": "预计算环境遮蔽",
+          "purpose": "读取 Lightmass 烘焙得到的 AO 遮罩。",
+          "example": "用它给墙角添加污渍颜色。",
+          "caution": "需要静态光照及相关 AO／遮罩生成设置；没有烘焙数据就无效。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/constant-material-expressions-in-unreal-engine?application_version=5.6#precomputedaomask",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "PreviousFrameSwitch",
+          "chinese": "当前帧／上一帧切换",
+          "purpose": "分别提供当前帧和上一帧的计算，帮助顶点动画生成正确运动矢量。",
+          "example": "参数驱动的 WPO 动画同时提供上一帧参数。",
+          "caution": "用于时间抗锯齿与运动模糊；需要对应速度输出设置。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/utility-material-expressions-in-unreal-engine?application_version=5.6#previous-frame-switch",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "AtmosphericFogColor",
+          "chinese": "旧版大气雾颜色",
+          "purpose": "读取旧 Atmospheric Fog 的颜色。",
+          "example": "识别老项目中把表面融入远处雾色的节点。",
+          "caution": "UE5 文档明确标为弃用；新项目使用 Sky Atmosphere／体积雾方案。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/atmosphere-material-expressions-in-unreal-engine?application_version=5.6#atmosphericfogcolor",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Custom",
+          "chinese": "自定义着色代码",
+          "purpose": "直接编写 HLSL，完成现成节点不方便表达的运算。",
+          "example": "写一个自定义纹理采样计算。",
+          "caution": "需要着色器知识；错误代码可能无法编译，且可能影响优化。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/custom-material-expressions-in-unreal-engine?application_version=5.6#usingthecustommaterialexpression",
+            "basis": "官方分类正文"
+          },
+          "common": false
+        }
+      ]
+    },
+    {
+      "id": "functions",
+      "name": "常用材质函数（补充）",
+      "nodes": [
+        {
+          "name": "WorldAlignedTexture",
+          "chinese": "世界对齐贴图",
+          "purpose": "按世界位置从不同方向投射贴图，减少对模型 UV 的依赖。",
+          "example": "白盒墙面统一使用每 100 厘米一格的贴图。",
+          "caution": "材质函数，不是基础表达式。模型移动时可能出现纹理游动；输入需要 TextureObject。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/texturing-material-functions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方材质函数参考"
+          },
+          "common": true
+        },
+        {
+          "name": "WorldAlignedNormal",
+          "chinese": "世界对齐法线贴图",
+          "purpose": "按世界方向投射并处理法线贴图。",
+          "example": "给白盒模型添加统一比例的表面凹凸。",
+          "caution": "材质函数。普通 WorldAlignedTexture 的颜色结果不能直接代替正确的法线处理。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/texturing-material-functions-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方材质函数参考"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_Overlay",
+          "chinese": "叠加混合",
+          "purpose": "根据底色明暗，在变暗和变亮的混合方式之间切换。",
+          "example": "给底色叠加一层有明暗起伏的细节。",
+          "caution": "材质函数。不是 Lerp；它按颜色公式运算。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-overlay",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_Screen",
+          "chinese": "滤色混合",
+          "purpose": "通常让两张 0～1 的图变亮，黑色基本不影响底图。",
+          "example": "叠加亮纹理或光斑。",
+          "caution": "材质函数。公式：1 - (1 - A) × (1 - B)。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-screen",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_ColorBurn",
+          "chinese": "颜色加深",
+          "purpose": "按混合色加强底色的暗部和对比。",
+          "example": "给底色叠加深色污迹。",
+          "caution": "材质函数。白色混合层通常保持底色；深色可能迅速压黑。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-colorburn",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_ColorDodge",
+          "chinese": "颜色减淡",
+          "purpose": "按混合色加强底色的亮部。",
+          "example": "叠加很亮的光泽颜色。",
+          "caution": "材质函数。黑色混合层通常保持底色；亮色可能迅速变白。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-colordodge",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_Darken",
+          "chinese": "变暗",
+          "purpose": "逐通道选择底色与混合色中较暗的值。",
+          "example": "让污渍层只压暗底色。",
+          "caution": "材质函数。各通道分别比较，不是选择整张图中较暗的一张。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-darken",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_Difference",
+          "chinese": "差值",
+          "purpose": "取两种颜色相减后的绝对值。",
+          "example": "相同区域变黑，差异区域变亮。",
+          "caution": "材质函数。白色混合层会让 0～1 的底色反相。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-difference",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_Exclusion",
+          "chinese": "排除",
+          "purpose": "生成类似差值但对比更柔和的颜色效果。",
+          "example": "制作较柔和的反相风格。",
+          "caution": "材质函数。黑色混合层保持原色，白色混合层产生反相。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-exclusion",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_HardLight",
+          "chinese": "强光",
+          "purpose": "根据混合层明暗选择相乘或滤色，形成强对比。",
+          "example": "给底色加入较强的亮暗纹理。",
+          "caution": "材质函数。Overlay 通常依据底色明暗，本函数依据混合层明暗。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-hardlight",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_Lighten",
+          "chinese": "变亮",
+          "purpose": "逐通道选择底色与混合色中较亮的值。",
+          "example": "只叠加更亮的纹理部分。",
+          "caution": "材质函数。可用 Max 实现核心比较运算。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-lighten",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_LinearBurn",
+          "chinese": "线性加深",
+          "purpose": "把两色相加再减 1，通常让结果变暗。",
+          "example": "用深色层加强阴影。",
+          "caution": "材质函数。对 0～1 输入，公式是 A + B - 1，再限制结果。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-linearburn",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_LinearDodge",
+          "chinese": "线性减淡",
+          "purpose": "把颜色相加，让重叠处变亮。",
+          "example": "叠加亮图案或发光纹理。",
+          "caution": "材质函数。与正片叠底相反；实际是否限制范围取决于函数实现。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-lineardodge",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_LinearLight",
+          "chinese": "线性光",
+          "purpose": "根据混合层明暗，以线性加深或减淡改变底色。",
+          "example": "制作强烈的明暗变化。",
+          "caution": "材质函数。0.5 的混合色通常接近保持底色。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-linearlight",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_PinLight",
+          "chinese": "点光",
+          "purpose": "按混合层明暗选择变暗或变亮，替换相应的颜色部分。",
+          "example": "制作局部颜色替换和高反差纹理。",
+          "caution": "材质函数。效果与柔光不同，过渡可能较生硬。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-pinlight",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "Blend_SoftLight",
+          "chinese": "柔光混合",
+          "purpose": "用较柔和的方式改变底色对比和亮暗。",
+          "example": "给表面加入柔和的明暗细节。",
+          "caution": "材质函数。与 Overlay 的强度和公式不同。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/blend-material-functions-in-unreal-engine?application_version=5.6#blend-softlight",
+            "basis": "补充：官方混合函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "BlendAngleCorrectedNormals",
+          "chinese": "角度修正法线混合",
+          "purpose": "混合两张法线，让细节法线合理地叠到基础法线上。",
+          "example": "大块石头法线 + 细小颗粒法线。",
+          "caution": "材质函数。不要把两张法线当普通颜色直接相加。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-functions-reference-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方材质函数总目录"
+          },
+          "common": false
+        },
+        {
+          "name": "DitherTemporalAA",
+          "chinese": "时间抖动遮罩",
+          "purpose": "借助随帧变化的抖动图案，模拟渐隐的像素覆盖。",
+          "example": "淡出值接函数，再接 Masked 材质的 Opacity Mask。",
+          "caution": "材质函数。依赖时间累积抗锯齿，可能出现噪点或拖影；不等于真实透明。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/material-functions-reference-in-unreal-engine?application_version=5.6",
+            "basis": "补充：官方材质函数总目录"
+          },
+          "common": false
+        },
+        {
+          "name": "CustomRotator",
+          "chinese": "可控角度 UV 旋转",
+          "purpose": "围绕指定二维中心，按输入角度旋转 UV。",
+          "example": "中心 0.5、0.5，角度 0.25：旋转四分之一圈。",
+          "caution": "材质函数。角度范围 0～1 表示一整圈；它不会自动随时间旋转。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/texturing-material-functions-in-unreal-engine?application_version=5.6#customrotator",
+            "basis": "补充：官方贴图函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "HeightLerp",
+          "chinese": "按高度混合",
+          "purpose": "用高度图和过渡值控制两种内容的混合。",
+          "example": "让泥土先进入砖缝，再覆盖砖面。",
+          "caution": "材质函数。高度图控制出现顺序，不会增加几何高度。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/texturing-material-functions-in-unreal-engine?application_version=5.6#heightlerp",
+            "basis": "补充：官方贴图函数正文"
+          },
+          "common": false
+        },
+        {
+          "name": "DetailTexturing",
+          "chinese": "细节纹理叠加",
+          "purpose": "把细节颜色与细节法线叠加到基础表面上。",
+          "example": "远处看大纹理，近处看到细颗粒。",
+          "caution": "材质函数。可调整细节的缩放及强度。",
+          "source": {
+            "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/texturing-material-functions-in-unreal-engine?application_version=5.6#detailtexturing",
+            "basis": "补充：官方贴图函数正文"
+          },
+          "common": false
+        }
+      ]
+    }
+  ]
+}

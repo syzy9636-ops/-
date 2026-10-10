@@ -1,10 +1,15 @@
+import { ueCategories } from './ueMaterials.js'
+import { blenderShaderCategories } from './blenderShader.js'
+
 export const notionHome = 'https://app.notion.com/p/3d2b7a683ee780978d25c7036df98238?source=copy_link'
 export const blenderHome = 'https://app.notion.com/p/Blender-3d4b7a683ee78001a2f0d5b0b83b9302?pvs=25'
 
 export const platforms = [
   { id: 'all', label: '全部内容', english: 'ALL NOTES', short: 'ALL', tone: 'gold' },
   { id: 'ae', label: 'After Effects', english: 'AE ECOSYSTEM', short: 'AE', tone: 'gold' },
-  { id: 'blender', label: 'Blender', english: 'GEOMETRY NODES', short: 'BLENDER', tone: 'violet' },
+  { id: 'blender-geometry', label: 'Blender 几何节点', english: 'GEOMETRY NODES', short: 'BLENDER', tone: 'violet' },
+  { id: 'blender-material', label: 'Blender 材质节点', english: 'SHADER NODES', short: 'BLENDER', tone: 'coral' },
+  { id: 'ue', label: 'Unreal Engine', english: 'UE MATERIALS', short: 'UE', tone: 'teal' },
 ]
 
 const item = (title, note, tags = [], images = []) => ({ title, note, tags, images })
@@ -168,7 +173,7 @@ export const categories = [
   },
   {
     id: 'blender-geometry',
-    platform: 'blender',
+    platform: 'blender-geometry',
     label: '运算与矢量',
     english: 'MATH & VECTOR',
     short: 'MATH',
@@ -194,7 +199,7 @@ export const categories = [
   },
   {
     id: 'blender-noise',
-    platform: 'blender',
+    platform: 'blender-geometry',
     label: '噪波基础',
     english: 'NOISE BASICS',
     short: 'NOISE',
@@ -206,16 +211,18 @@ export const categories = [
   },
 ]
 
+categories.push(...blenderShaderCategories, ...ueCategories)
+
 export const allEntries = categories.flatMap((category) =>
   category.entries.map((entry, index) => ({
     ...entry,
-    id: `${category.id}-${index + 1}`,
+    id: entry.id || `${category.id}-${index + 1}`,
     number: String(index + 1).padStart(2, '0'),
     categoryId: category.id,
     category: category.label,
     categoryEnglish: category.english,
     platform: category.platform,
     tone: category.tone,
-    source: category.source,
+    source: entry.source || category.source,
   })),
 )
