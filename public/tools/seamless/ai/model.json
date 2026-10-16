@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "bytes": 208044816,
+  "sha256": "1faef5301d78db7dda502fe59966957ec4b79dd64e16f03ed96913c7a4eb68d6",
+  "parts": [
+    {
+      "file": "lama-01.bin",
+      "bytes": 16777216,
+      "sha256": "d21fa443bc249981f27e2b4b8f7fbad6d5c66a064cb1cfb6820883b2cb0a2e24"
+    },
+    {
+      "file": "lama-02.bin",
+      "bytes": 16777216,
+      "sha256": "f99e4e4d11cf368da63ecbc1bb32e0c170f0f37c4dedf33536898d21eab4e5a9"
+    },
+    {
+      "file": "lama-03.bin",
+      "bytes": 16777216,
+      "sha256": "bc76e654a0d80a343f015401956bf9a33c021bb18459f0bac44956de166f09d8"
+    },
+    {
+      "file": "lama-04.bin",
+      "bytes": 16777216,
+      "sha256": "5e436229c8fdefe538df849c8510c40d286179f7a4f6a0f72319d212fd4f0ac0"
+    },
+    {
+      "file": "lama-05.bin",
+      "bytes": 16777216,
+      "sha256": "7f093d2ab0058b458fc18f716753667291a10c513af9504f6ae22b1b849dc637"
+    },
+    {
+      "file": "lama-06.bin",
+      "bytes": 16777216,
+      "sha256": "a03c1cbb26dd0cf004968b1e23d9700d3dcb1dcd847dd106dd6cbdcb64efc7ad"
+    },
+    {
+      "file": "lama-07.bin",
+      "bytes": 16777216,
+      "sha256": "f53d6091918d3af2c693f2dce2465d4e53ec59f60b7117e2834ec59b5adce223"
+    },
+    {
+      "file": "lama-08.bin",
+      "bytes": 16777216,
+      "sha256": "cfdbc5c7520cccc0dd6a37eb2a5614fbc28b4d97f108a7b24bc1424484196ff8"
+    },
+    {
+      "file": "lama-09.bin",
+      "bytes": 16777216,
+      "sha256": "cdffa8ddd3dc26b0f581286d5212ef46334765ec19b439e7185959565d953c82"
+    },
+    {
+      "file": "lama-10.bin",
+      "bytes": 16777216,
+      "sha256": "83bc97a13834987d50e56c64d038616a16477a05c69c2d3d04a093529925e7f6"
+    },
+    {
+      "file": "lama-11.bin",
+      "bytes": 16777216,
+      "sha256": "9aede118dae1e0c37bf1a481b54af92124589de6f73c33891b497c9190621e7a"
+    },
+    {
+      "file": "lama-12.bin",
+      "bytes": 16777216,
+      "sha256": "2df0fff26cfd92e91bdaeb45b10de97eedfc2114588019da5f64f6c038ff477a"
+    },
+    {
+      "file": "lama-13.bin",
+      "bytes": 6718224,
+      "sha256": "25aed5e8e2cb5deb769ca1ed295ba87db39dee465ddf7d65705f24b10ab35ef6"
+    }
+  ]
+}

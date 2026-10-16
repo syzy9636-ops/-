@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-mode="dark" data-theme="knowledge">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>四方贴图编辑器</title><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./website.css"></head>
+<body>
+<svg class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="i-import" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="m8 4-5 5 5 5M3 9h10a7 7 0 0 1 0 14"/></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><path d="m16 4 5 5-5 5m5-5H11a7 7 0 0 0 0 14"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="m9 3 9 3-3 5 2 5-6-2-4 3-2-2 4-4zM9 15l-6 7"/></symbol>
+<symbol id="i-magic" viewBox="0 0 24 24"><path d="m4 20 12-12 4 4L8 24M15 2v4m-2-2h4M4 7v4m-2-2h4m14 9v4m-2-2h4"/></symbol>
+<symbol id="i-select" viewBox="0 0 24 24"><path stroke-dasharray="3 3" d="M3 3h18v18H3z"/></symbol>
+<symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v16h16M2 6h16v16"/></symbol>
+<symbol id="i-brush" viewBox="0 0 24 24"><path d="m9 13 9-10 4 4-10 9M9 13c-5-1-5 5-6 7 6 1 10-1 9-4z"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 12V5a2 2 0 0 1 4 0v7-9a2 2 0 0 1 4 0v9-7a2 2 0 0 1 4 0v10c0 7-10 9-13 3L3 12a2 2 0 0 1 3-2z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 12h18M12 3v18"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><path d="M9 9h12v12H9zM15 5V3H3v12h2"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 20V5h7l2 3h9v12z"/></symbol>
+<symbol id="i-fit" viewBox="0 0 24 24"><path d="M3 9V3h6m6 0h6v6m0 6v6h-6m-6 0H3v-6"/></symbol>
+</defs></svg>
+<header class="topbar">
+ <div class="brand"><div class="brand-mark"><svg><use href="#i-grid"/></svg></div><div><strong>四方贴图编辑器</strong><span>SEAMLESS TEXTURE EDITOR</span></div><span class="version">1.1</span></div>
+ <div class="top-actions"><button id="importBtn" class="primary"><svg><use href="#i-import"/></svg>导入贴图</button><button id="pasteBtn" title="Ctrl+V">粘贴</button><span class="divider"></span><button id="undoBtn" class="icon" title="撤销 Ctrl+Z"><svg><use href="#i-undo"/></svg></button><button id="redoBtn" class="icon" title="重做 Ctrl+Shift+Z"><svg><use href="#i-redo"/></svg></button></div>
+ <div class="appearance"><span class="local-note">图片本地处理</span><button id="fullscreenBtn" title="全屏工作台"><svg><use href="#i-fit"/></svg>全屏</button></div>
+</header>
+<main class="layout">
+ <aside class="library panel">
+  <div class="panel-heading"><h2>素材库 <span id="assetCount" class="badge">0</span></h2><button id="addBtn" class="icon" title="添加多张图片">＋</button></div>
+  <div class="library-tools"><button id="selectAllBtn">全选</button><button id="deselectBtn">取消选择</button><button id="removeBtn" title="Delete：从素材库移除所选图片，不删除磁盘原文件">删除</button></div>
+  <div class="selection-info"><span id="selectedCount">未选择素材</span><span>Ctrl / Shift / 框选</span></div>
+  <div id="assetList" class="asset-list" tabindex="0" aria-label="素材库"><div id="assetSpacer"></div><div id="assetItems"></div><div id="rubberBand" hidden></div><div id="libraryEmpty">把素材拖到这里<br><small>支持批量导入</small></div></div>
+  <div class="batch-actions"><button id="batchSeamBtn">批量无缝</button><button id="batchExportBtn">批量导出</button></div>
+  <section class="section selection-section"><div class="section-title"><h3>贴图范围</h3><button id="clearSelectionBtn" class="text-button">清除</button></div><p class="hint">拖动手柄调大小 · 拖动线框移动 · Delete 删除</p>
+   <div class="coord-grid"><label>X<input id="selX" type="number" value="0" min="0"></label><label>Y<input id="selY" type="number" value="0" min="0"></label><label>宽<input id="selW" type="number" value="0" min="1"></label><label>高<input id="selH" type="number" value="0" min="1"></label></div>
+   <div class="row"><label class="check"><input id="squareCheck" type="checkbox" checked>正方形选区</label><button id="centerSquareBtn">居中方形</button></div><button id="cropBtn" class="wide">裁切 / 以选区建立贴图</button><button id="selectionMaskBtn" class="wide">选区转为修复区 · 可擦除</button>
+  </section>
+ </aside>
+ <section class="workspace">
+  <div class="workbar"><div class="tool-strip"><button class="tool" data-tool="hand" title="移动 H / 按住空格"><svg><use href="#i-hand"/></svg><span>移动</span></button><button class="tool" data-tool="select" title="选区 V"><svg><use href="#i-select"/></svg><span>选区</span></button><button class="tool" data-tool="crop" title="裁切 C"><svg><use href="#i-crop"/></svg><span>裁切</span></button><button class="tool" data-tool="brush" title="修复笔刷 B"><svg><use href="#i-brush"/></svg><span>笔刷</span></button><button id="eraserTool" class="tool" title="橡皮擦 E">◇ <span>橡皮擦</span></button></div><button id="fitBtn" class="icon" title="适应窗口 F"><svg><use href="#i-fit"/></svg></button></div>
+  <div class="viewbar"><div><span class="eyebrow">WORKBENCH</span><span id="documentName">工作台</span></div><div class="row"><div class="segmented"><button data-tiles="1" class="active">单图</button><button data-tiles="2">2×2</button><button data-tiles="3">3×3</button></div><button id="inspectBtn" title="固定视窗，按住左键上下左右拖动循环贴图检查接缝">固定四方巡检</button><button id="offsetBtn" title="把四周接缝移到中心检查">接缝居中</button><button id="gridBtn" title="显示平铺边界">网格</button></div></div>
+  <div id="stage" class="stage" tabindex="0"><canvas id="stageCanvas"></canvas><div id="welcome" class="welcome"><div class="welcome-symbol"><svg><use href="#i-grid"/></svg></div><span class="eyebrow">MAKE IT ENDLESS</span><h1>四方连续贴图</h1><p>导入一张图片，开始制作四方连续的无缝贴图。<br>原图保留，处理过程随时可撤销。</p><button id="welcomeImport" class="primary">选择图片 · 支持多选</button><button id="demoBtn" class="text-button">或试用石材样例 →</button><div class="format-list">PNG · JPG · WEBP · TIFF · TGA · BMP · GIF · AVIF · SVG</div></div><div id="stageHint" class="stage-hint" hidden></div><div class="zoom-control"><button id="zoomOut" title="缩小">−</button><button id="zoomValue" title="重置为 100%">100%</button><button id="zoomIn" title="放大">＋</button></div></div>
+  <div class="compare-header"><strong>实时对比</strong><span>点击预览后 Ctrl+C 复制 · Ctrl+V 粘贴导入</span></div>
+  <div class="compare-row"><div class="preview-card selected" id="originalCard" tabindex="0"><div class="preview-label"><span><i></i>原始图</span><div><button id="copyOriginalBtn" title="复制原图">复制</button><button id="downloadOriginalBtn">下载原图</button></div></div><canvas id="originalPreview"></canvas><span class="preview-meta" id="originalMeta">原始文件完整保留</span></div><div class="preview-card" id="resultCard" tabindex="0"><div class="preview-label"><span><i class="result-dot"></i>生成图</span><div><button id="copyResultBtn">复制</button><button id="quickExportBtn">导出</button></div></div><canvas id="resultPreview"></canvas><span class="preview-meta" id="resultMeta">等待导入</span></div></div>
+ </section>
+ <aside class="settings panel">
+  <section class="section"><div class="section-title"><h3><span class="step">01</span> 无缝处理</h3><span id="seamBadge" class="tag">未处理</span></div>
+   <button id="autoBtn" class="primary wide magic"><svg><use href="#i-magic"/></svg>一键智能无缝</button>
+   <label class="field">处理范围<select id="scope"><option value="all">整张贴图</option><option value="selection">当前选区（局部）</option><option value="mask">仅笔刷涂抹区域</option></select></label>
+   <div class="field-grid"><label class="field">融合方式<select id="method"><option value="match">纹理匹配</option><option value="blend">柔和混合</option></select></label><label class="field">接缝方向<select id="axes"><option value="both">四周双向</option><option value="x">左右</option><option value="y">上下</option></select></label></div>
+   <label class="range-label">边缘过渡宽度 <output id="bandValue">20%</output><input id="band" type="range" min="5" max="45" value="20"></label>
+   <label class="range-label">接缝羽化 <output id="featherValue">35%</output><input id="feather" type="range" min="5" max="100" value="35"></label>
+   <button id="applySeamBtn" class="wide">按设置处理</button><p id="scopeHint" class="hint">一键处理整张图；局部模式只修改指定区域。</p>
+  </section>
+  <section class="section"><div class="section-title"><h3><span class="step">02</span> 智能修复笔刷</h3><button id="clearMaskBtn" class="text-button">清除涂抹</button></div>
+   <label class="field">修复方式<select id="healMethod"><option value="ai">AI 结构修复 · 推荐</option><option value="texture">纹理精细修复 · 较快</option></select></label>
+   <label class="range-label">笔刷直径 <output id="brushValue">48 px</output><input id="brushSize" type="range" min="4" max="512" value="48"></label>
+   <label class="range-label">边缘柔和度 <output id="softValue">50%</output><input id="brushSoft" type="range" min="0" max="100" value="50"></label>
+   <div class="row"><label class="check"><input id="eraser" type="checkbox">擦除涂抹</label><label class="check"><input id="showMask" type="checkbox" checked>显示区域</label></div>
+   <button id="healBtn" class="wide">智能修复涂抹区域</button><p class="hint">AI 首次使用需加载约 210 MB，后续优先用缓存。<br>图片在当前设备处理，不上传；纹理模式无需模型。<br>透明底保留 · [ / ] 调笔刷 · 大范围建议分区</p>
+  </section>
+  <section class="section export-section"><div class="section-title"><h3><span class="step">03</span> 输出贴图</h3><span class="tag">保留透明</span></div>
+   <label class="field">文件名<input id="fileName" value="seamless-texture" spellcheck="false"></label>
+   <div class="field-grid"><label class="field">格式<select id="format"><option value="png">PNG · 无损</option><option value="tiff">TIFF · 无损 RGBA</option><option value="tga">TGA · 无损 RGBA</option><option value="bmp">BMP · 无损 RGBA</option><option value="webp">WebP · 高质量</option><option value="jpeg">JPEG · 不透明</option></select></label><label class="field">重采样<select id="resample"><option value="lanczos">高质量 Lanczos</option><option value="nearest">像素风 · 最近邻</option></select></label></div>
+   <div class="size-row"><label>自定义宽（px）<input id="outW" type="number" min="1" max="8192" value="1024"></label><span class="square-lock" title="最终输出正方形">1:1</span><label>高（px）<input id="outH" type="number" min="1" max="8192" value="1024"></label></div>
+   <div class="scale-presets"><button data-scale="0.5">½×</button><button data-scale="1">裁切后原尺寸</button><button data-scale="2">2×</button></div><div class="scale-presets"><button data-resolution="512">512</button><button data-resolution="1024">1K</button><button data-resolution="2048">2K</button><button data-resolution="4096">4K</button><button data-resolution="8192">8K</button></div>
+   <div class="row quality-row" id="qualityRow" hidden><label>质量 <input id="quality" type="number" min="1" max="100" value="95"></label><label id="matteLabel">底色 <input id="matte" type="color" value="#ffffff"></label></div>
+   <button id="directoryBtn" class="wide folder-button"><svg><use href="#i-folder"/></svg><span id="directoryLabel">选择保存文件夹…</span></button><p id="directoryPath" class="path-hint">单张直接下载，批量下载 ZIP；也可选择文件夹</p>
+   <button id="exportBtn" class="primary wide"><svg><use href="#i-save"/></svg>导出当前贴图</button><p class="hint">只输出正方形：非方图取正方形选区或居中裁切。<br>原尺寸 = 裁切后的像素尺寸；缩放仅影响导出。<br>批量使用各素材文件名 +「_seamless」，打包下载 ZIP。</p>
+  </section>
+ </aside>
+</main>
+<footer><div><span class="status-dot"></span><span id="status">准备就绪 · 图片本地处理</span></div><div><span id="pixelInfo"></span><span id="historyInfo">Ctrl+Z 撤销 · Ctrl+Shift+Z 重做</span><label class="history-limit">历史上限 <input id="historyLimit" type="number" min="1" max="30" value="30"> 步</label><button id="helpBtn">快捷键 / 说明</button></div></footer>
+<input id="fileInput" type="file" multiple accept="image/*,.tga,.tif,.tiff,.bmp,.avif" hidden>
+<div id="busyOverlay" class="busy-overlay" hidden><div class="busy-card"><span class="eyebrow">PROCESSING</span><h2 id="busyTitle">正在处理</h2><div class="progress-track"><div id="progressBar"></div></div><p id="busyText">请稍候</p><button id="cancelBtn">取消处理</button></div></div>
+<div id="toast" role="status" hidden></div>
+<div id="contextMenu" class="context-menu" hidden><button data-action="copy-result">复制生成图 <kbd>Ctrl+C</kbd></button><button data-action="copy-original">复制原图</button><button data-action="paste">粘贴图片 <kbd>Ctrl+V</kbd></button><hr><button data-action="export">导出当前贴图</button><button data-action="original">下载原图</button><hr><button data-action="fit">适应窗口 <kbd>F</kbd></button><button data-action="selection">清除选区</button><button data-action="mask">清除涂抹</button><hr><button data-action="undo">撤销 <kbd>Ctrl+Z</kbd></button><button data-action="redo">重做 <kbd>Ctrl+Shift+Z</kbd></button></div>
+<dialog id="helpDialog"><div class="section-title"><h2>使用说明</h2><button id="closeHelp">关闭</button></div><p>1. 批量导入图片，在左侧点选素材。Ctrl 点选、Shift 连选、Ctrl+A 全选；拖动文字区或空白框选，拖动缩略图到工作台。</p><p>2. 默认左键移动图片、滚轮缩放。选区 / 裁切工具中，左键拖动框选；按住空格临时移动。工作图保持自身长宽比，最终输出正方形。</p><p>3. 裁切范围后点「一键智能无缝」。一键处理会把非方图按正方形选区或居中裁切；用 2×2 / 3×3 检查。笔刷涂抹瑕疵后点「智能修复」；橡皮擦擦除涂抹，选区也可转成修复区。</p><p>4. 设置文件名、格式、裁切后原尺寸或自定义分辨率，导出当前贴图或批量导出。单张直接下载，批量默认下载 ZIP（最多 256 MiB）；更大的批次请分批导出或选择保存文件夹。输出最大 8192×8192。</p><div class="help-grid"><span>撤销 / 重做</span><kbd>Ctrl+Z / Ctrl+Shift+Z</kbd><span>复制所选预览 / 粘贴图片</span><kbd>Ctrl+C / Ctrl+V</kbd><span>选区 / 裁切 / 笔刷 / 橡皮擦 / 移动</span><kbd>V / C / B / E / H</kbd><span>移动 / 缩放 / 适应窗口</span><kbd>空格拖动 / 滚轮 / F</kbd><span>调整笔刷 / 确认裁切</span><kbd>[ ] / Enter</kbd><span>清除选区 / 关闭右键菜单</span><kbd>Esc</kbd></div><p class="hint">AI 结构修复首次下载约 210 MB 的模型和运行文件，之后优先使用浏览器缓存；模型在本机运行，不上传图片。GitHub Pages 使用单线程推理，耗时取决于设备，可随时取消。大范围会缩小后重建，建议分区涂抹。它会推测缺失内容，不能保证还原原有曲线。透明图保留原透明通道。纹理精细修复使用多尺度 PatchMatch，无需下载 AI 模型即可运行。缩放采用透明通道正确的高质量重采样，不会恢复原图没有的细节。图片工作空间为 8 位 sRGB；不保留 EXIF、ICC、图层、动画或 HDR 数据，下载原图保留原始文件。</p><p class="hint">GIF / 动态 WebP / AVIF 导入静态首帧。TIFF 支持 8 位条带 RGB、RGBA、灰度、调色板及无压缩 / LZW / Deflate / PackBits。JPEG 不支持透明。BMP / TGA 的透明显示还取决于目标软件。导入最多 6400 万像素、单边 16384；大型图片请留意内存。</p><p class="hint">批量导出默认使用每张图裁切后的正方形原尺寸，也可统一倍率或自定义分辨率。素材与编辑仅在本次打开期间保留，关闭前请导出。历史记录可设 1–30 步，总快照超过 128 MB 时淘汰最早步骤。一万张素材按需加载缩略图。</p><p class="hint">AI 模型：LaMa / Carve ONNX（Apache 2.0）；推理：ONNX Runtime（MIT）。<a href="./ai/licenses.txt" target="_blank" rel="noopener">第三方许可</a></p></dialog>
+<script src="./core.js"></script><script src="./codecs.js"></script><script src="./zip.js"></script><script src="./app.js"></script>
+</body></html>

@@ -38,6 +38,7 @@ import { MaterialDetails } from './MaterialGuide.jsx'
 import BlenderShaderDetails from './BlenderShaderDetails.jsx'
 import { blenderManual } from './blenderShader.js'
 import PlatformArtwork from './PlatformArtwork.jsx'
+import SeamlessTool from './SeamlessTool.jsx'
 import './styles.css'
 import './material-guide.css'
 import './blender-guide.css'
@@ -53,6 +54,10 @@ const initialPlatform = () => {
   const requested = new URLSearchParams(window.location.search).get('platform')
   const platformId = requested === 'blender' ? 'blender-geometry' : requested
   return platforms.some((platform) => platform.id === platformId) ? platformId : 'all'
+}
+const initialTool = () => {
+  const tool = new URLSearchParams(window.location.search).get('tool')
+  return ['rgba', 'seamless'].includes(tool) ? tool : null
 }
 const backgroundVideos = [
   { bvid: 'BV12719BzEKD', playbackMs: 250800 },
@@ -1115,6 +1120,11 @@ function Sidebar({ activePlatform, activeCategory, activeTool, onPlatformChange,
               <span><strong>RGBA 通道工具</strong><small>PACK / UNPACK</small></span>
               <b>TOOL</b>
             </button>
+            <button className={`category-nav-item tool-nav-item tone-teal ${activeTool === 'seamless' ? 'is-active' : ''}`} type="button" onClick={() => chooseTool('seamless')}>
+              <Scan size={18} />
+              <span><strong>四方连续贴图</strong><small>SEAMLESS TEXTURE</small></span>
+              <b>TOOL</b>
+            </button>
           </div>
         </nav>
 
@@ -1240,7 +1250,7 @@ function ImageLightbox({ image, alt, onClose }) {
 function App() {
   const [activePlatform, setActivePlatform] = useState(initialPlatform)
   const [activeCategory, setActiveCategory] = useState('all')
-  const [activeTool, setActiveTool] = useState(null)
+  const [activeTool, setActiveTool] = useState(initialTool)
   const [query, setQuery] = useState('')
   const [selectedEntry, setSelectedEntry] = useState(null)
   const [lightbox, setLightbox] = useState(null)
@@ -1332,11 +1342,19 @@ function App() {
     catalogRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' })
   }
 
-  const activeToolLabel = 'RGBA 通道工具'
+  const chooseTool = (tool) => {
+    setActiveTool(tool)
+    const url = new URL(window.location.href)
+    if (tool) url.searchParams.set('tool', tool)
+    else url.searchParams.delete('tool')
+    window.history.replaceState(null, '', url)
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
+  const activeToolLabel = activeTool === 'seamless' ? '四方连续贴图' : 'RGBA 通道工具'
 
   useLayoutEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduceMotion) return undefined
+    if (reduceMotion || initialTool()) return undefined
     const context = gsap.context(() => {
       const timeline = gsap.timeline({ defaults: { ease: 'expo.out' } })
       if (window.matchMedia('(min-width: 901px)').matches) {
@@ -1358,6 +1376,7 @@ function App() {
     let observer
     const context = gsap.context(() => {
       const cards = gsap.utils.toArray('.entry-card')
+      if (!cards.length) return
       gsap.set(cards, { y: 24, autoAlpha: 0 })
       observer = new IntersectionObserver((records) => {
         const visible = records.filter((record) => record.isIntersecting).map((record) => record.target)
@@ -1389,20 +1408,19 @@ function App() {
   }, [])
 
   return (
-    <div className="knowledge-app" ref={appRef}>
-      <BackgroundVideo />
-      <AmbientField />
-      <ScrollBlur />
-      <Sidebar activePlatform={activePlatform} activeCategory={activeCategory} activeTool={activeTool} onPlatformChange={choosePlatform} onCategoryChange={chooseCategory} onToolChange={setActiveTool} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className={`knowledge-app ${activeTool === 'seamless' ? 'is-seamless' : ''}`} ref={appRef}>
+      {!activeTool && <><BackgroundVideo /><AmbientField /><ScrollBlur /></>}
+      <Sidebar activePlatform={activePlatform} activeCategory={activeCategory} activeTool={activeTool} onPlatformChange={choosePlatform} onCategoryChange={chooseCategory} onToolChange={chooseTool} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="app-main">
         <header className="utility-bar">
           <button className="mobile-menu" type="button" onClick={() => setSidebarOpen(true)} aria-label="打开分类菜单"><Menu size={19} /></button>
           <div className="breadcrumb"><span>{activeTool ? 'EXTENSION TOOL' : 'FX NOTES'}</span><i /> <strong>{activeTool ? activeToolLabel : activeLabel}</strong></div>
-          {activeTool ? <button className="source-link tool-back-link" type="button" onClick={() => setActiveTool(null)}>返回知识库 <ArrowUpRight size={16} /></button> : <a className="source-link" href={sourceForPlatform(activePlatform).url} target="_blank" rel="noreferrer">{sourceForPlatform(activePlatform).label} <ArrowUpRight size={16} /></a>}
+          {activeTool ? <button className="source-link tool-back-link" type="button" onClick={() => chooseTool(null)}>返回知识库 <ArrowUpRight size={16} /></button> : <a className="source-link" href={sourceForPlatform(activePlatform).url} target="_blank" rel="noreferrer">{sourceForPlatform(activePlatform).label} <ArrowUpRight size={16} /></a>}
         </header>
 
-        {activeTool === 'rgba' ? <RgbaToolWorkspace /> : <>
+        <SeamlessTool active={activeTool === 'seamless'} />
+        {activeTool === 'seamless' ? null : activeTool === 'rgba' ? <RgbaToolWorkspace /> : <>
         <section className="knowledge-hero">
           <div className="hero-copy">
             <span className="hero-eyebrow">{heroCopy.eyebrow}</span>
@@ -1473,7 +1491,7 @@ function App() {
         <footer className="site-footer">
           <span>© 2026 王恩涛 / {activeTool ? '扩展工具' : '视效知识库'}</span>
           <span>{activeTool ? '本地纹理通道合并与拆分工具' : 'AE / Blender / UE 制作经验索引'}</span>
-          {activeTool ? <button className="footer-tool-link" type="button" onClick={() => setActiveTool(null)}>返回知识库 <ArrowUpRight size={14} /></button> : <a href={sourceForPlatform(activePlatform).url} target="_blank" rel="noreferrer">{sourceForPlatform(activePlatform).label} <ArrowUpRight size={14} /></a>}
+          {activeTool ? <button className="footer-tool-link" type="button" onClick={() => chooseTool(null)}>返回知识库 <ArrowUpRight size={14} /></button> : <a href={sourceForPlatform(activePlatform).url} target="_blank" rel="noreferrer">{sourceForPlatform(activePlatform).label} <ArrowUpRight size={14} /></a>}
         </footer>
       </main>
 
